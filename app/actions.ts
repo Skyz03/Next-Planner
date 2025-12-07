@@ -44,3 +44,25 @@ export async function toggleTask(taskId: string, currentStatus: boolean) {
     await supabase.from('tasks').update({ is_completed: !currentStatus }).eq('id', taskId)
     revalidatePath('/')
 }
+
+export async function saveReflection(formData: FormData) {
+    const supabase = createClient()
+
+    const win = formData.get('win') as string
+    const challenge = formData.get('challenge') as string
+    const energy = formData.get('energy') as string
+    const completedCount = formData.get('completed_count') as string
+    const weekStart = formData.get('week_start') as string
+
+    await supabase.from('reflections').insert({
+        user_id: TEST_USER_ID,
+        biggest_win: win,
+        biggest_challenge: challenge,
+        energy_rating: parseInt(energy),
+        total_tasks_completed: parseInt(completedCount),
+        week_start_date: weekStart
+    })
+
+    // Redirect to home or show a success message
+    revalidatePath('/')
+}
