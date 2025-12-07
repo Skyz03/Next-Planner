@@ -1,12 +1,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { addTask, addGoal, toggleTask } from './actions'
+import { signout } from '@/app/auth/actions'
 import Link from 'next/link'
 
 async function getData() {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { tasks: [], goals: [] }
+  }
+
   const [tasksResponse, goalsResponse] = await Promise.all([
-    supabase.from('tasks').select('*, goals(title)').eq('user_id', 'test-user-1').order('created_at', { ascending: false }),
-    supabase.from('goals').select('*').eq('user_id', 'test-user-1').order('created_at', { ascending: false })
+    supabase.from('tasks').select('*, goals(title)').eq('user_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
   ])
   return { tasks: tasksResponse.data || [], goals: goalsResponse.data || [] }
 }
@@ -57,10 +64,15 @@ export default async function Dashboard() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="mt-auto pt-6 border-t border-slate-200/50">
+        <div className="mt-auto pt-6 border-t border-slate-200/50 space-y-3">
           <Link href="/reflection" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all text-sm font-medium">
             <span>✨ Weekly Reflection</span>
           </Link>
+          <form action={signout}>
+            <button className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl hover:shadow-lg transition-all text-sm font-medium border border-red-200">
+              Sign Out
+            </button>
+          </form>
         </div>
       </aside>
 

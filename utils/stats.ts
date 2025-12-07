@@ -2,6 +2,11 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function getWeeklyStats() {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { completed: 0, total: 0, startOfWeek: new Date() }
+    }
 
     // Get start of the current week (Sunday)
     const today = new Date()
@@ -15,7 +20,7 @@ export async function getWeeklyStats() {
     const { data: tasks } = await supabase
         .from('tasks')
         .select('*')
-        .eq('user_id', 'test-user-1')
+        .eq('user_id', user.id)
         .gte('created_at', startOfWeek.toISOString())
 
     const completed = tasks?.filter(t => t.is_completed).length || 0
