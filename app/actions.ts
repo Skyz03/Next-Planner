@@ -151,3 +151,36 @@ export async function scheduleTask(formData: FormData) {
 
   revalidatePath('/')
 }
+
+
+export async function updateTask(formData: FormData) {
+  const { supabase, user } = await getUser()
+  const taskId = formData.get('taskId') as string
+  const newTitle = formData.get('title') as string
+  
+  if (!taskId || !newTitle) return
+
+  await supabase
+    .from('tasks')
+    .update({ title: newTitle })
+    .eq('id', taskId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/')
+}
+
+export async function updateGoal(formData: FormData) {
+  const { supabase, user } = await getUser()
+  const goalId = formData.get('goalId') as string
+  const newTitle = formData.get('title') as string
+
+  if (!goalId || !newTitle) return
+
+  await supabase
+    .from('goals')
+    .update({ title: newTitle })
+    .eq('id', goalId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/')
+}

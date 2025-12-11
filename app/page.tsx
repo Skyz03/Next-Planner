@@ -4,6 +4,7 @@ import { getWeekDays, formatDate, isSameDay } from '@/utils/date'
 import Link from 'next/link'
 import TaskItem from '@/components/TaskItem'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import EditableText from '@/components/EditableText'
 
 export default async function Dashboard({
   searchParams,
@@ -73,7 +74,13 @@ export default async function Dashboard({
 
               {/* Goal Title */}
               <div className="flex justify-between items-start mb-2 group">
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">{goal.title}</h3>
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 flex-1">
+                  <EditableText 
+                    id={goal.id} 
+                    initialText={goal.title} 
+                    type="goal" 
+                  />
+                </h3>
                 <form action={deleteGoal} className="opacity-0 group-hover:opacity-100 transition-opacity">
                   <input type="hidden" name="goalId" value={goal.id} />
                   <button className="text-slate-300 hover:text-red-500 px-1 text-xs">Del</button>
@@ -91,9 +98,14 @@ export default async function Dashboard({
                     key={task.id}
                     className="group flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-indigo-200 transition-all"
                   >
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate max-w-[160px]">
-                      {task.title}
-                    </span>
+                    <div className="flex-1 truncate max-w-[160px]">
+                      <EditableText 
+                        id={task.id} 
+                        initialText={task.title} 
+                        type="task" 
+                        className="text-xs font-medium text-slate-600 dark:text-slate-300"
+                      />
+                    </div>
 
                     {/* THE "PUSH TO DAILY" BUTTON */}
                     <form action={scheduleTask}>
@@ -130,7 +142,14 @@ export default async function Dashboard({
               <div className="space-y-2">
                 {orphanedTasks.map(task => (
                   <div key={task.id} className="group flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 transition-all">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[160px]">{task.title}</span>
+                    <div className="flex-1 truncate max-w-[160px]">
+                      <EditableText 
+                        id={task.id} 
+                        initialText={task.title} 
+                        type="task" 
+                        className="text-xs text-slate-500 dark:text-slate-400"
+                      />
+                    </div>
                     <form action={scheduleTask}>
                       <input type="hidden" name="taskId" value={task.id} />
                       <input type="hidden" name="date" value={normalizedDateStr} />
