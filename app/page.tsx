@@ -9,6 +9,7 @@ import DroppableDay from '@/components/DroppableDay'
 import PlanningGrid from '@/components/PlanningGrid'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import EditableText from '@/components/EditableText'
+import AIGenerateButton from '@/components/AIGenerateButton' 
 
 export default async function Dashboard({
   searchParams,
@@ -92,10 +93,16 @@ export default async function Dashboard({
                 <h3 className="font-bold text-sm text-stone-800 dark:text-stone-100 flex-1">
                   <EditableText id={goal.id} initialText={goal.title} type="goal" className="hover:text-orange-600 transition-colors" />
                 </h3>
-                <form action={deleteGoal} className="opacity-0 group-hover/goal:opacity-100 transition-opacity">
-                  <input type="hidden" name="goalId" value={goal.id} />
-                  <button className="text-stone-400 hover:text-red-400 px-1 text-xs">×</button>
-                </form>
+                {/* ACTIONS GROUP */}
+                <div className="flex items-center gap-1 opacity-0 group-hover/goal:opacity-100 transition-opacity">
+                  {/* AI Generate Button */}
+                  <AIGenerateButton goalId={goal.id} goalTitle={goal.title} />
+                  {/* Delete Button */}
+                  <form action={deleteGoal}>
+                    <input type="hidden" name="goalId" value={goal.id} />
+                    <button className="text-stone-300 hover:text-red-400 px-1 text-xs">×</button>
+                  </form>
+                </div>
               </div>
               <div className="pl-8 space-y-2 relative">
                 {goal.steps.length === 0 && <p className="text-[10px] text-stone-400 italic mb-2">Add a step...</p>}

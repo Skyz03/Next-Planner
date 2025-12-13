@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 // Helper to get User ID safely
 async function getUser() {
@@ -197,4 +198,56 @@ export async function moveTaskToDate(taskId: string, dateStr: string | null) {
     .eq('user_id', user.id)
 
   revalidatePath('/')
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+
+export async function generateStepsForGoal(goalId: string, goalTitle: string) {
+  const { supabase, user } = await getUser()
+
+  try {
+    // 1. Configure the Model
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+
+    // 2. The Prompt
+    // We ask for JSON so it's easy to parse programmatically
+    const prompt = `
+      I have a goal: "${goalTitle}".
+      Give me 4 specific, actionable, small weekly tasks to help me achieve this.
+      Keep titles under 6 words.
+      Return ONLY a raw JSON array of strings. 
+      Example: ["Research competitors", "Draft first outline", "Email 3 leads"]
+      Do not include markdown formatting like \`\`\`json.
+    `
+
+    // 3. Call Gemini
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+
+    // 4. Parse the Clean JSON
+    // Sometimes AI adds backticks, so we clean it just in case
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim()
+    const steps: string[] = JSON.parse(cleanedText)
+
+    // 5. Insert into Database (Batch Insert)
+    if (steps.length > 0) {
+      const tasksToInsert = steps.map(stepTitle => ({
+        user_id: user.id,
+        goal_id: goalId,
+        title: stepTitle,
+        due_date: null, // Goes to Backlog/Weekly Rituals
+        is_completed: false
+      }))
+
+      await supabase.from('tasks').insert(tasksToInsert)
+    }
+
+    revalidatePath('/')
+    return { success: true }
+
+  } catch (error) {
+    console.error("AI Error:", error)
+    return { success: false, error: "Failed to generate steps" }
+  }
 }
