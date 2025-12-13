@@ -13,26 +13,44 @@ export default async function Dashboard({
 }) {
   const supabase = createClient()
   const params = await searchParams
+  const viewMode = (params as any)?.view || 'focus' // 'focus' | 'plan'
 
   const today = new Date()
   const selectedDateStr = params.date || formatDate(today)
   const normalizedDateStr = selectedDateStr.split('T')[0]
   const selectedDate = new Date(normalizedDateStr)
 
+  // 1. Calculate Week Range (Mon - Sun)
   const weekDays = getWeekDays(selectedDate)
+  const startOfWeek = formatDate(weekDays[0])
+  const endOfWeek = formatDate(weekDays[6])
+
   const prevWeek = new Date(selectedDate); prevWeek.setDate(selectedDate.getDate() - 7);
   const nextWeek = new Date(selectedDate); nextWeek.setDate(selectedDate.getDate() + 7);
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [scheduledTasks, weeklyHabits, goalsResponse] = await Promise.all([
-    supabase.from('tasks').select('*, goals(title)').eq('user_id', user.id).eq('due_date', normalizedDateStr).order('is_completed', { ascending: true }).order('created_at', { ascending: false }),
+  // 2. FETCH DATA (Optimized: Fetch entire week at once)
+  const [weekTasksResponse, weeklyHabits, goalsResponse] = await Promise.all([
+    supabase.from('tasks')
+      .select('*, goals(title)')
+      .eq('user_id', user.id)
+      .gte('due_date', startOfWeek) // >= Monday
+      .lte('due_date', endOfWeek)   // <= Sunday
+      .order('is_completed', { ascending: true })
+      .order('created_at', { ascending: false }),
+
     supabase.from('tasks').select('*').eq('user_id', user.id).is('due_date', null).eq('is_completed', false).order('created_at', { ascending: false }),
     supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
   ])
 
-  const tasks = scheduledTasks.data || []
+  // All tasks for this week (we filter these later)
+  const allWeekTasks = weekTasksResponse.data || []
+
+  // Filter for the MAIN VIEW (Selected Date Only)
+  const tasks = allWeekTasks.filter(t => t.due_date === normalizedDateStr)
+
   const weeklyList = weeklyHabits.data || []
   const goals = goalsResponse.data || []
 
@@ -43,30 +61,39 @@ export default async function Dashboard({
   const orphanedTasks = weeklyList.filter(t => !t.goal_id)
 
   return (
-    // CONTAINER: Warm Stone colors instead of cold Grays
     <div className="flex h-screen bg-[#FAFAF9] dark:bg-[#1C1917] text-stone-800 dark:text-stone-200 font-sans overflow-hidden transition-colors duration-500 selection:bg-orange-200 dark:selection:bg-orange-900">
 
-      {/* --- SIDEBAR: CLEAN JOURNAL STYLE --- */}
+      {/* --- SIDEBAR (Unchanged) --- */}
       <aside className="w-80 bg-[#F5F5F4] dark:bg-[#292524] border-r border-stone-200 dark:border-stone-800 flex flex-col z-20 transition-colors duration-500">
-
-        {/* Header */}
+        {/* ... (Keep your existing sidebar code exactly the same) ... */}
         <div className="p-8 pb-4 flex justify-between items-center">
           <div>
             <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-50 tracking-tight">Rituals</h2>
             <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-medium">Design your week.</p>
           </div>
           <ThemeToggle />
+
+          <div className="flex bg-stone-200 dark:bg-stone-800 p-1 rounded-lg">
+            <Link
+              href={`/?date=${normalizedDateStr}&view=focus`}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${viewMode === 'focus' ? 'bg-white dark:bg-stone-600 shadow-sm text-stone-800 dark:text-stone-100' : 'text-stone-500 hover:text-stone-700'}`}
+            >
+              Focus
+            </Link>
+            <Link
+              href={`/?date=${normalizedDateStr}&view=plan`}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${viewMode === 'plan' ? 'bg-white dark:bg-stone-600 shadow-sm text-stone-800 dark:text-stone-100' : 'text-stone-500 hover:text-stone-700'}`}
+            >
+              Plan
+            </Link>
+          </div>
         </div>
 
-        {/* GOAL TREE */}
+        {/* Simplified Goal Tree for brevity in this snippet */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-8 custom-scrollbar">
-
           {tree.map(goal => (
             <div key={goal.id} className="relative group/goal">
-              {/* Connector Line */}
               <div className="absolute left-[11px] top-6 bottom-0 w-px bg-stone-300 dark:bg-stone-700"></div>
-
-              {/* Goal Title */}
               <div className="flex items-center gap-3 mb-3 relative">
                 <div className="w-6 h-6 rounded-full bg-white dark:bg-stone-800 border-2 border-orange-300 dark:border-orange-700/50 flex items-center justify-center shadow-sm z-10">
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
@@ -79,37 +106,20 @@ export default async function Dashboard({
                   <button className="text-stone-400 hover:text-red-400 px-1 text-xs">×</button>
                 </form>
               </div>
-
-              {/* Weekly Steps */}
               <div className="pl-8 space-y-2 relative">
-                {goal.steps.length === 0 && (
-                  <p className="text-[10px] text-stone-400 italic mb-2">Add a step...</p>
-                )}
-
-                {goal.steps.map((task: { id: string; title: string }) => (
-                  <div
-                    key={task.id}
-                    className="group flex items-center justify-between p-2 bg-white dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700/50 hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 transition-all duration-200"
-                  >
+                {goal.steps.length === 0 && <p className="text-[10px] text-stone-400 italic mb-2">Add a step...</p>}
+                {goal.steps.map((task: any) => (
+                  <div key={task.id} className="group flex items-center justify-between p-2 bg-white dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700/50 hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 transition-all duration-200">
                     <div className="flex-1 truncate max-w-[140px]">
-                      <EditableText
-                        id={task.id}
-                        initialText={task.title}
-                        type="task"
-                        className="text-xs font-medium text-stone-600 dark:text-stone-300"
-                      />
+                      <EditableText id={task.id} initialText={task.title} type="task" className="text-xs font-medium text-stone-600 dark:text-stone-300" />
                     </div>
                     <form action={scheduleTask}>
                       <input type="hidden" name="taskId" value={task.id} />
                       <input type="hidden" name="date" value={normalizedDateStr} />
-                      <button className="text-[10px] bg-stone-100 dark:bg-stone-700 text-stone-500 hover:bg-orange-500 hover:text-white px-2 py-0.5 rounded-md transition-colors">
-                        Add
-                      </button>
+                      <button className="text-[10px] bg-stone-100 dark:bg-stone-700 text-stone-500 hover:bg-orange-500 hover:text-white px-2 py-0.5 rounded-md transition-colors">Add</button>
                     </form>
                   </div>
                 ))}
-
-                {/* Inline Add */}
                 <form action={addTask} className="mt-2">
                   <input type="hidden" name="date_type" value="backlog" />
                   <input type="hidden" name="goal_id" value={goal.id} />
@@ -118,8 +128,6 @@ export default async function Dashboard({
               </div>
             </div>
           ))}
-
-          {/* Add Goal Button */}
           <div className="pt-4 mt-6 border-t border-stone-200 dark:border-stone-700/50">
             <form action={addGoal}>
               <input name="title" placeholder="Define a new vision..." className="w-full bg-transparent text-sm font-serif italic text-stone-600 dark:text-stone-400 placeholder:text-stone-400 outline-none border-b border-stone-200 focus:border-orange-400 py-2 transition-all" />
@@ -128,11 +136,12 @@ export default async function Dashboard({
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT: THE CANVAS --- */}
+      {/* --- MAIN CONTENT --- */}
       <main className="flex-1 flex flex-col relative z-10">
 
-        {/* WEEK STRIP */}
-        <div className="h-32 flex flex-col pt-6 px-8 bg-[#FAFAF9] dark:bg-[#1C1917]">
+        {/* WEEK STRIP WITH CAPACITY BARS */}
+        <div className="h-40 flex flex-col pt-6 px-8 bg-[#FAFAF9] dark:bg-[#1C1917]">
+
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
               {weekDays[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -149,30 +158,63 @@ export default async function Dashboard({
               const isActive = dateStr === normalizedDateStr
               const isToday = isSameDay(day, today)
 
+              // --- CAPACITY LOGIC ---
+              // Filter allWeekTasks to count how many fall on THIS specific day
+              const dayLoad = allWeekTasks.filter(t => t.due_date === dateStr).length
+
+              // Determine Color & Height based on load
+              let barColor = "bg-stone-200 dark:bg-stone-700" // Default (Empty)
+              let loadLabel = "Free"
+
+              if (dayLoad > 0 && dayLoad <= 2) {
+                barColor = "bg-green-400" // Light
+                loadLabel = "Light"
+              } else if (dayLoad > 2 && dayLoad <= 5) {
+                barColor = "bg-yellow-400" // Medium
+                loadLabel = "Busy"
+              } else if (dayLoad > 5) {
+                barColor = "bg-orange-500" // Heavy
+                loadLabel = "Full"
+              }
+
               return (
                 <Link
                   key={dateStr}
                   href={`/?date=${dateStr}`}
                   scroll={false}
-                  className={`flex-1 h-16 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 border-2 cursor-pointer
+                  className={`flex-1 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 border-2 cursor-pointer relative overflow-hidden group
                     ${isActive
-                      ? 'bg-stone-800 dark:bg-stone-200 border-stone-800 dark:border-stone-200 text-white dark:text-stone-900 shadow-lg scale-105'
+                      ? 'bg-stone-800 dark:bg-stone-200 border-stone-800 dark:border-stone-200 text-white dark:text-stone-900 shadow-lg scale-105 z-10'
                       : 'bg-white dark:bg-stone-800 border-transparent hover:border-stone-200 dark:hover:border-stone-700 text-stone-500'
                     }
                   `}
                 >
                   <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                  <span className="text-lg font-serif font-bold">{day.getDate()}</span>
-                  {isToday && !isActive && <div className="w-1 h-1 bg-orange-500 rounded-full mt-1"></div>}
+                  <span className="text-xl font-serif font-bold leading-none">{day.getDate()}</span>
+
+                  {/* --- THE CAPACITY BAR --- */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1.5 flex justify-center pb-1">
+                    {dayLoad === 0 ? (
+                      // Tiny dot if empty (optional, mostly clean)
+                      <div className="w-1 h-1 rounded-full bg-stone-200 dark:bg-stone-700"></div>
+                    ) : (
+                      // The Load Bar
+                      <div className={`h-1 rounded-full transition-all duration-500 ${barColor} ${isActive ? 'opacity-90' : 'opacity-70'}`} style={{ width: `${Math.min(dayLoad * 10 + 20, 80)}%` }}></div>
+                    )}
+                  </div>
+
+                  {/* Tooltip on Hover (Optional detail for the "Architect") */}
+                  <div className="absolute -top-8 bg-stone-900 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    {dayLoad} tasks
+                  </div>
                 </Link>
               )
             })}
           </div>
         </div>
 
-        {/* DAILY VIEW */}
+        {/* DAILY VIEW (Unchanged) */}
         <div className="flex-1 px-8 md:px-12 lg:px-20 overflow-y-auto custom-scrollbar">
-
           <header className="mt-8 mb-10 pb-6 border-b border-stone-200 dark:border-stone-800 flex items-baseline justify-between">
             <div>
               <h1 className="text-5xl md:text-6xl font-serif font-medium text-stone-900 dark:text-stone-50 tracking-tight mb-2">
@@ -198,7 +240,6 @@ export default async function Dashboard({
               tasks.map(task => <TaskItem key={task.id} task={task} />)
             )}
 
-            {/* Inline Add Task (Looks like writing on paper) */}
             <div className="group pt-4 opacity-70 hover:opacity-100 transition-opacity">
               <form action={addTask} className="flex items-center gap-4">
                 <input type="hidden" name="specific_date" value={normalizedDateStr} />
