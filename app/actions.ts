@@ -251,3 +251,20 @@ export async function generateStepsForGoal(goalId: string, goalTitle: string) {
     return { success: false, error: "Failed to generate steps" }
   }
 }
+
+export async function scheduleTaskTime(taskId: string, startTime: string | null, duration: number = 60) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase
+    .from('tasks')
+    .update({ 
+      start_time: startTime, // Pass null to remove from timeline (back to dock)
+      duration: duration
+    })
+    .eq('id', taskId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/')
+}
