@@ -8,7 +8,7 @@ import { updateSession } from '@/utils/supabase/middleware'
  * `Response`/`NextResponse`. If it returns `null`/`undefined`, we fall
  * back to `NextResponse.next()`.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = await updateSession(request)
   return response ?? NextResponse.next()
 }
