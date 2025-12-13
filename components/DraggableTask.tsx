@@ -24,6 +24,7 @@ export default function DraggableTask({ task, children }: { task: any, children:
       style={style} 
       {...listeners} 
       {...attributes}
+      suppressHydrationWarning={true}
       className={`touch-none cursor-grab active:cursor-grabbing ${isDragging ? 'shadow-2xl rotate-2 opacity-50' : ''}`}
     >
       {children}
