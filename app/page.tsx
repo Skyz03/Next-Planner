@@ -161,74 +161,42 @@ export default async function Dashboard({
           // --- PLAN MODE ---
           <PlanningGrid weekDays={weekDays} allTasks={allWeekTasks} />
         ) : (
-          // --- FOCUS MODE ---
-          <div className="flex flex-col h-full overflow-hidden">
-            {/* Keep Week Strip (Capacity Bars) */}
-            <div className="h-40 flex-none flex flex-col pt-6 px-8 bg-[#FAFAF9] dark:bg-[#1C1917]">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
-                  {weekDays[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          // --- FOCUS MODE (Revamped) ---
+          <div className="flex flex-col h-full overflow-hidden relative">
+            {/* 1. STICKY WEEK STRIP (The Drop Targets) */}
+            {/* z-30 ensures it stays ON TOP when dragging time blocks under it */}
+            <div className="h-32 flex-none flex flex-col px-8 py-4 bg-[#FAFAF9]/90 dark:bg-[#1C1917]/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 z-30 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                  Move tasks to another day
                 </h2>
-                <div className="flex gap-2">
-                  <Link href={`/?date=${formatDate(prevWeek)}`} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 transition-colors">←</Link>
-                  <Link href={`/?date=${formatDate(nextWeek)}`} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 transition-colors">→</Link>
-                </div>
               </div>
-
-              <div className="flex-1 flex items-start gap-3">
-                {weekDays.map((day, index) => {
+              <div className="flex-1 flex items-start gap-2">
+                {weekDays.map((day) => {
                   const dateStr = formatDate(day)
                   const isActive = dateStr === normalizedDateStr
-                  const isToday = isSameDay(day, today)
-
-                  // --- CAPACITY LOGIC ---
-                  // Filter allWeekTasks to count how many fall on THIS specific day
                   const dayLoad = allWeekTasks.filter(t => t.due_date === dateStr).length
 
-                  // Determine Color & Height based on load
-                  let barColor = "bg-stone-200 dark:bg-stone-700" // Default (Empty)
-                  let loadLabel = "Free"
-
-                  if (dayLoad > 0 && dayLoad <= 2) {
-                    barColor = "bg-green-400" // Light
-                    loadLabel = "Light"
-                  } else if (dayLoad > 2 && dayLoad <= 5) {
-                    barColor = "bg-yellow-400" // Medium
-                    loadLabel = "Busy"
-                  } else if (dayLoad > 5) {
-                    barColor = "bg-orange-500" // Heavy
-                    loadLabel = "Full"
-                  }
-
                   return (
-                    <DroppableDay key={dateStr} dateStr={dateStr} className="flex-1 h-20">
+                    <DroppableDay key={dateStr} dateStr={dateStr} className="flex-1 h-full">
                       <Link
                         href={`/?date=${dateStr}&view=focus`}
                         scroll={false}
-                        className={`block h-full rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 border-2 cursor-pointer relative overflow-hidden group
+                        className={`block h-full rounded-xl flex flex-col items-center justify-center gap-1 border-2 transition-all 
                           ${isActive
-                            ? 'bg-stone-800 dark:bg-stone-200 border-stone-800 dark:border-stone-200 text-white dark:text-stone-900 shadow-lg scale-105 z-10'
-                            : 'bg-white dark:bg-stone-800 border-transparent hover:border-stone-200 dark:hover:border-stone-700 text-stone-500'
+                            ? 'bg-stone-800 dark:bg-stone-200 border-stone-800 text-white dark:text-stone-900'
+                            : 'bg-white dark:bg-stone-800 border-transparent hover:border-orange-300 text-stone-500'
                           }
                         `}
                       >
-                        <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                        <span className="text-xl font-serif font-bold leading-none">{day.getDate()}</span>
-
-                        {/* --- THE CAPACITY BAR --- */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1.5 flex justify-center pb-1">
-                          {dayLoad === 0 ? (
-                            // Tiny dot if empty (optional, mostly clean)
-                            <div className="w-1 h-1 rounded-full bg-stone-200 dark:bg-stone-700"></div>
-                          ) : (
-                            // The Load Bar
-                            <div className={`h-1 rounded-full transition-all duration-500 ${barColor} ${isActive ? 'opacity-90' : 'opacity-70'}`} style={{ width: `${Math.min(dayLoad * 10 + 20, 80)}%` }}></div>
-                          )}
-                        </div>
-
-                        {/* Tooltip on Hover (Optional detail for the "Architect") */}
-                        <div className="absolute -top-8 bg-stone-900 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                          {dayLoad} tasks
+                        <span className="text-[10px] font-bold uppercase">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                        <span className="text-lg font-serif font-bold leading-none">{day.getDate()}</span>
+                        
+                        {/* Mini Capacity Dot */}
+                        <div className="flex gap-0.5 mt-1">
+                          {Array.from({ length: Math.min(dayLoad, 4) }).map((_, i) => (
+                            <div key={i} className={`w-1 h-1 rounded-full ${isActive ? 'bg-white/50' : 'bg-orange-400'}`}></div>
+                          ))}
                         </div>
                       </Link>
                     </DroppableDay>
@@ -237,9 +205,8 @@ export default async function Dashboard({
               </div>
             </div>
 
-            {/* NEW: Time Tetris View */}
-            <div className="flex-1 overflow-hidden border-t border-stone-200 dark:border-stone-800">
-              {/* Pass ONLY today's tasks to the grid */}
+            {/* 2. THE TIME GRID (Scrollable Area) */}
+            <div className="flex-1 overflow-hidden relative z-10">
               <TimeGrid tasks={allWeekTasks.filter(t => t.due_date === normalizedDateStr)} />
             </div>
           </div>
