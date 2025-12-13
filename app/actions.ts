@@ -184,3 +184,17 @@ export async function updateGoal(formData: FormData) {
 
   revalidatePath('/')
 }
+
+export async function moveTaskToDate(taskId: string, dateStr: string | null) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase
+    .from('tasks')
+    .update({ due_date: dateStr }) // Pass null to move back to backlog
+    .eq('id', taskId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/')
+}
