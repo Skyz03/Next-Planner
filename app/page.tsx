@@ -48,7 +48,7 @@ export default async function Dashboard({
   if (!user) return null
 
   // 2. FETCH DATA
-  const [weekTasksResponse, weeklyHabits, goalsResponse] = await Promise.all([
+  const [weekTasksResponse, weeklyHabitsResponse, goalsResponse, inboxResponse] = await Promise.all([
     supabase.from('tasks')
       .select('*, goals(title)')
       .eq('user_id', user.id)
@@ -58,16 +58,25 @@ export default async function Dashboard({
       .order('created_at', { ascending: false }),
 
     supabase.from('tasks').select('*').eq('user_id', user.id).is('due_date', null).eq('is_completed', false).order('created_at', { ascending: false }),
-    supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+    supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    // Inbox: Tasks with no date AND no goal (rapid capture items)
+    supabase.from('tasks')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('due_date', null)
+      .is('goal_id', null)
+      .eq('is_completed', false)
+      .order('created_at', { ascending: false })
   ])
 
   const allWeekTasks = weekTasksResponse.data || []
-  const weeklyList = weeklyHabits.data || []
-  const goals = goalsResponse.data || []
+  const weeklyList = (weeklyHabitsResponse && 'data' in weeklyHabitsResponse) ? weeklyHabitsResponse.data ?? [] : [];
+  const goals = (goalsResponse && 'data' in goalsResponse) ? goalsResponse.data ?? [] : [];
+  const inboxTasks = (inboxResponse && 'data' in inboxResponse) ? inboxResponse.data ?? [] : [];
 
-  const tree = goals.map(goal => ({
+  const tree = goals.map((goal: any) => ({
     ...goal,
-    steps: weeklyList.filter(t => t.goal_id === goal.id)
+    steps: weeklyList.filter((t: any) => t.goal_id === goal.id)
   }))
 
   // Format the Date Range Text (e.g., "Dec 14 - Dec 20, 2025")
@@ -100,6 +109,31 @@ export default async function Dashboard({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-2 space-y-8 custom-scrollbar">
+        <div className="px-6 mb-2 mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Inbox</span>
+            <span className="text-[10px] bg-stone-200 dark:bg-stone-800 px-1.5 rounded-full text-stone-500">{inboxTasks.length}</span>
+            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800"></div>
+          </div>
+
+          <div className="space-y-2">
+            {inboxTasks.length === 0 && (
+              <div className="py-4 text-center border border-dashed border-stone-200 dark:border-stone-800 rounded-lg">
+                <p className="text-[10px] text-stone-400">Cmd+K to capture</p>
+              </div>
+            )}
+
+            {inboxTasks.map(task => (
+              <DraggableTask key={task.id} task={task}>
+                <div className="bg-white dark:bg-[#262626] p-3 rounded-lg border border-stone-200 dark:border-stone-700 shadow-sm hover:border-orange-400 cursor-grab active:cursor-grabbing group flex justify-between items-center">
+                  <span className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{task.title}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50"></div>
+                </div>
+              </DraggableTask>
+            ))}
+          </div>
+        </div>
+
         {tree.map(goal => (
           <div key={goal.id} className="relative group/goal">
             <div className="absolute left-[11px] top-7 bottom-2 w-px bg-stone-200 dark:bg-stone-800"></div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import InboxCapture from './InboxCapture'
 
 export default function DashboardShell({
     sidebar,
@@ -25,7 +26,7 @@ export default function DashboardShell({
 
     return (
         <div className="flex h-screen bg-[#FAFAF9] dark:bg-[#1C1917] overflow-hidden">
-
+            <InboxCapture />
             {/* 1. SIDEBAR CONTAINER (The "Snap" Logic) */}
             <div
                 className={`flex-none h-full transition-all duration-300 ease-in-out border-r border-stone-200 dark:border-stone-800 bg-[#F5F5F4] dark:bg-[#292524] relative ${
@@ -66,6 +67,7 @@ export default function DashboardShell({
 
             {/* 3. MAIN CONTENT (Resizes automatically via Flexbox) */}
             <div className="flex-1 flex flex-col min-w-0 z-10 transition-all duration-300">
+
                 {children}
             </div>
         </div>
