@@ -9,9 +9,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 async function getUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) redirect('/login') // Protect the action
-  
+
   return { supabase, user }
 }
 
@@ -31,56 +31,76 @@ export async function addGoal(formData: FormData) {
 }
 
 // --- UPDATED: Task Action ---
+// app/actions.ts
+
 export async function addTask(formData: FormData) {
-  const { supabase, user } = await getUser() // ✅ REAL USER
+  const { supabase, user } = await getUser()
+
   const title = formData.get('title') as string
   const goalId = formData.get('goal_id') as string
-  const dateType = formData.get('date_type') as string
+  const dateType = formData.get('date_type') as string // 'inbox' | 'backlog' | undefined
   const specificDate = formData.get('specific_date') as string
 
   if (!title) return
 
-  // Determine due_date based on form inputs
-  let dueDate: string | null = null
-  if (dateType === 'backlog') {
-    dueDate = null // Backlog tasks have no due date
-  } else if (specificDate) {
-    // Normalize date to YYYY-MM-DD format (ensure no time component)
-    // If already in YYYY-MM-DD format, use it directly; otherwise parse it
-    if (/^\d{4}-\d{2}-\d{2}$/.test(specificDate)) {
-      dueDate = specificDate // Already in correct format
-    } else {
-      const date = new Date(specificDate)
-      dueDate = date.toISOString().split('T')[0] // Returns "YYYY-MM-DD"
-    }
+  // 1. Base Task Object
+  // We add 'duration: 60' so your new Timer/Reality Check UI works immediately
+  const taskData: any = {
+    title,
+    user_id: user.id,
+    priority: 'medium',
+    duration: 60,
+    actual_duration: 0, // Reset timer tracking
+    is_completed: false
   }
 
-  const { error } = await supabase.from('tasks').insert({
-    title,
-    user_id: user.id, // ✅ Using Real ID
-    priority: 'medium',
-    goal_id: goalId && goalId !== 'none' ? goalId : null,
-    due_date: dueDate
-  })
+  // 2. Logic Branching
+  if (dateType === 'inbox') {
+    // 📥 INBOX MODE: Rapid Capture
+    // Explicitly nullify connections so it sits in the "Inbox" section
+    taskData.due_date = null
+    taskData.goal_id = null
+  }
+  else if (dateType === 'backlog') {
+    // 📋 BACKLOG MODE: Strategic Planning
+    // Has a goal (context), but no specific time yet
+    taskData.due_date = null
+    taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
+  }
+  else if (specificDate) {
+    // 🗓️ SCHEDULED MODE: Direct execution
+    // Normalize date string
+    if (/^\d{4}-\d{2}-\d{2}$/.test(specificDate)) {
+      taskData.due_date = specificDate
+    } else {
+      const date = new Date(specificDate)
+      taskData.due_date = date.toISOString().split('T')[0]
+    }
+
+    // Attach goal if present
+    taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
+  }
+
+  // 3. Database Insert
+  const { error } = await supabase.from('tasks').insert(taskData)
 
   if (error) {
     console.error('Error adding task:', error)
     return
   }
 
-  // Revalidate the page - Next.js will preserve the current URL with query params
   revalidatePath('/', 'layout')
 }
 
-export async function toggleTask(taskId: string, currentStatus: boolean) {
+export async function toggleTask(taskId: string, isCompleted: boolean) {
   const { supabase, user } = await getUser()
-  
+
   await supabase
     .from('tasks')
-    .update({ is_completed: !currentStatus })
+    .update({ is_completed: isCompleted }) // 👈 Save the exact value sent from UI
     .eq('id', taskId)
-    .eq('user_id', user.id) // ✅ Ensure user can only toggle their own tasks
-  
+    .eq('user_id', user.id)
+
   revalidatePath('/')
 }
 
@@ -158,7 +178,7 @@ export async function updateTask(formData: FormData) {
   const { supabase, user } = await getUser()
   const taskId = formData.get('taskId') as string
   const newTitle = formData.get('title') as string
-  
+
   if (!taskId || !newTitle) return
 
   await supabase
@@ -259,7 +279,7 @@ export async function scheduleTaskTime(taskId: string, startTime: string | null,
 
   await supabase
     .from('tasks')
-    .update({ 
+    .update({
       start_time: startTime, // Pass null to remove from timeline (back to dock)
       duration: duration
     })
@@ -305,24 +325,24 @@ export async function getWeeklyReviewData(startDate: string, endDate: string) {
 
 export async function migrateUncompletedTasks(taskIds: string[], action: 'move-next-week' | 'move-backlog' | 'delete', nextMondayDate?: string) {
   const supabase = await createClient()
-  
+
   if (action === 'delete') {
     await supabase.from('tasks').delete().in('id', taskIds)
-  } 
+  }
   else if (action === 'move-backlog') {
     await supabase.from('tasks').update({ due_date: null, start_time: null }).in('id', taskIds)
   }
   else if (action === 'move-next-week' && nextMondayDate) {
     await supabase.from('tasks').update({ due_date: nextMondayDate, start_time: null }).in('id', taskIds)
   }
-  
+
   revalidatePath('/')
 }
 
 export async function saveWeeklyReflection(weekStart: string, completed: number, total: number, text: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   await supabase.from('reflections').insert({
     user_id: user?.id,
     week_start_date: weekStart,
@@ -330,4 +350,44 @@ export async function saveWeeklyReflection(weekStart: string, completed: number,
     total_tasks_scheduled: total,
     reflection_text: text
   })
+}
+
+export async function toggleTimer(taskId: string) {
+  const supabase = await createClient()
+
+  // 1. Get current task state
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('last_started_at, actual_duration')
+    .eq('id', taskId)
+    .single()
+
+  if (!task) return
+
+  const now = new Date()
+
+  // CASE A: STOPPING (It was running)
+  if (task.last_started_at) {
+    const startTime = new Date(task.last_started_at)
+    // Calculate minutes elapsed since start
+    const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
+
+    await supabase
+      .from('tasks')
+      .update({
+        last_started_at: null, // Stop it
+        actual_duration: (task.actual_duration || 0) + elapsedMinutes // Add to total
+      })
+      .eq('id', taskId)
+  }
+
+  // CASE B: STARTING (It was stopped)
+  else {
+    await supabase
+      .from('tasks')
+      .update({ last_started_at: now.toISOString() })
+      .eq('id', taskId)
+  }
+
+  revalidatePath('/')
 }

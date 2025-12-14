@@ -6,7 +6,7 @@ export default async function AIWeeklyInsight({ data }: { data: any }) {
     const insightHtml = await generateWeeklyInsight(data)
 
     return (
-        <div className="md:col-span-3 bg-gradient-to-r from-stone-900 to-stone-800 dark:from-indigo-950 dark:to-slate-900 rounded-3xl p-8 text-stone-200 shadow-2xl relative overflow-hidden group">
+        <div className="md:col-span-2 bg-gradient-to-r from-stone-900 to-[#2c2927] dark:from-[#1e1b4b] dark:to-[#0f172a] rounded-[2rem] p-8 text-stone-200 shadow-2xl relative overflow-hidden group border border-stone-800/50">
 
             {/* Animated Gradient Border/Glow */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>

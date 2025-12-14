@@ -1,4 +1,4 @@
-import { login, signup } from '@/app/auth/actions'
+import { login, signup } from '@/actions/auth'
 import { ErrorMessage } from './error-message'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
