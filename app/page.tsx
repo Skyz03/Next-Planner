@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/utils/supabase/server'
-import { addTask, addGoal, toggleTask, deleteGoal, scheduleTask, signOut } from './actions'
+import { addTask, addGoal, toggleTask, deleteGoal, scheduleTask, signOut, getWeeklyReviewData } from './actions'
 import { getWeekDays, formatDate, isSameDay } from '@/utils/date'
 import Link from 'next/link'
 import TaskItem from '@/components/TaskItem'
@@ -14,6 +14,7 @@ import EditableText from '@/components/EditableText'
 import AIGenerateButton from '@/components/AIGenerateButton'
 import DashboardShell from '@/components/DashboardShell'
 import TimeGrid from '@/components/TimeGrid'
+import ReviewTrigger from '@/components/ReviewTrigger'
 
 export default async function Dashboard({
   searchParams,
@@ -33,6 +34,9 @@ export default async function Dashboard({
   const weekDays = getWeekDays(selectedDate)
   const startOfWeek = formatDate(weekDays[0])
   const endOfWeek = formatDate(weekDays[6])
+
+  const nextMondayStr = formatDate(new Date(weekDays[1])) // Pass this for task migration
+  const reviewData = await getWeeklyReviewData(startOfWeek, endOfWeek)
 
   const prevWeek = new Date(selectedDate); prevWeek.setDate(selectedDate.getDate() - 7);
   const nextWeek = new Date(selectedDate); nextWeek.setDate(selectedDate.getDate() + 7);
@@ -70,132 +74,132 @@ export default async function Dashboard({
   const orphanedTasks = weeklyList.filter(t => !t.goal_id)
 
   const sidebarContent = (
-    <DroppableDay 
-      dateStr={null} 
+    <DroppableDay
+      dateStr={null}
       className="h-full w-full bg-[#F5F5F4] dark:bg-[#18181b] border-r border-stone-200 dark:border-stone-800 flex flex-col transition-colors duration-500 font-sans"
     >
-        
-        {/* HEADER: Clean & Balanced */}
-        <div className="flex flex-col px-6 pt-8 pb-4 pl-16"> {/* Maintained pl-16 for toggle button */}
-          <div className="flex justify-between items-start mb-1">
-             <div>
-               <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 tracking-tight">Rituals</h2>
-               <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">Design your week.</p>
-             </div>
-             
-             {/* Controls Group */}
-             <div className="flex items-center gap-2 bg-stone-200/50 dark:bg-stone-800/50 p-1 rounded-full">
-                <ThemeToggle />
-                <div className="w-px h-4 bg-stone-300 dark:bg-stone-700"></div>
-                <form action={signOut}>
-                  <button 
-                    className="p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors rounded-full hover:bg-white dark:hover:bg-stone-700"
-                    title="Sign Out"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                  </button>
-                </form>
-             </div>
+
+      {/* HEADER: Clean & Balanced */}
+      <div className="flex flex-col px-6 pt-8 pb-4 pl-16"> {/* Maintained pl-16 for toggle button */}
+        <div className="flex justify-between items-start mb-1">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 tracking-tight">Rituals</h2>
+            <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">Design your week.</p>
           </div>
-        </div>
 
-        {/* SCROLLABLE LIST */}
-        <div className="flex-1 overflow-y-auto px-6 py-2 space-y-8 custom-scrollbar">
-          
-          {tree.map(goal => (
-            <div key={goal.id} className="relative group/goal">
-              
-              {/* Connector Line (Subtler) */}
-              <div className="absolute left-[11px] top-7 bottom-2 w-px bg-stone-200 dark:bg-stone-800"></div>
-
-              {/* GOAL TITLE ROW */}
-              <div className="flex items-start gap-3 mb-3 relative group/title">
-                {/* Icon */}
-                <div className="relative z-10 mt-0.5">
-                   <div className="w-6 h-6 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-sm flex items-center justify-center group-hover/goal:border-orange-300 dark:group-hover/goal:border-orange-900 transition-colors">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                   </div>
-                </div>
-
-                {/* Text & Actions */}
-                <div className="flex-1 min-w-0">
-                   <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-sm text-stone-800 dark:text-stone-200 truncate pr-2">
-                        <EditableText id={goal.id} initialText={goal.title} type="goal" className="hover:text-orange-600 transition-colors" />
-                      </h3>
-                      
-                      {/* Floating Actions (Visible on Hover) */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-all transform translate-x-2 group-hover/title:translate-x-0">
-                         <AIGenerateButton goalId={goal.id} goalTitle={goal.title} />
-                         <form action={deleteGoal}>
-                           <input type="hidden" name="goalId" value={goal.id} />
-                           <button className="text-stone-300 hover:text-red-400 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete Goal">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                           </button>
-                         </form>
-                      </div>
-                   </div>
-                </div>
-              </div>
-
-              {/* TASKS LIST */}
-              <div className="pl-9 space-y-2.5 relative">
-                {goal.steps.length === 0 && (
-                   <div className="flex items-center gap-2 py-1 opacity-40">
-                      <div className="w-1 h-1 bg-stone-300 rounded-full"></div>
-                      <p className="text-[10px] text-stone-500 italic">No active rituals</p>
-                   </div>
-                )}
-                
-                {goal.steps.map((task: any) => (
-                  <DraggableTask key={task.id} task={task}>
-                    <div className="group flex items-center justify-between px-3 py-2.5 bg-white dark:bg-[#222] rounded-lg border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 hover:-translate-y-0.5 transition-all duration-200 cursor-grab active:cursor-grabbing">
-                      <div className="flex-1 min-w-0">
-                        <EditableText id={task.id} initialText={task.title} type="task" className="text-xs font-medium text-stone-600 dark:text-stone-300 block truncate" />
-                      </div>
-                      
-                      {/* Drag Handle Icon (Subtle hint) */}
-                      <div className="opacity-0 group-hover:opacity-30 text-stone-400 pl-2">
-                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="9" cy="19" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="15" cy="19" r="2"/></svg>
-                      </div>
-                    </div>
-                  </DraggableTask>
-                ))}
-
-                {/* Add Task Input */}
-                <form action={addTask} className="mt-1 opacity-60 hover:opacity-100 transition-opacity">
-                  <input type="hidden" name="date_type" value="backlog" />
-                  <input type="hidden" name="goal_id" value={goal.id} />
-                  <div className="flex items-center gap-2 pl-1">
-                     <span className="text-stone-300 text-sm">+</span>
-                     <input 
-                        name="title" 
-                        placeholder="Add step..." 
-                        className="w-full bg-transparent text-xs py-1 border-b border-transparent focus:border-stone-300 dark:focus:border-stone-600 outline-none text-stone-600 dark:text-stone-400 placeholder:text-stone-300 transition-colors" 
-                     />
-                  </div>
-                </form>
-              </div>
-            </div>
-          ))}
-
-          {/* Add Goal Section */}
-          <div className="pt-8 pb-20">
-            <form action={addGoal} className="group relative">
-               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-orange-500 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-               </div>
-               <input 
-                  name="title" 
-                  placeholder="New Strategic Goal..." 
-                  className="w-full bg-stone-100 dark:bg-stone-800/50 text-sm font-medium text-stone-800 dark:text-stone-200 placeholder:text-stone-400 outline-none border border-transparent focus:border-orange-300 dark:focus:border-orange-800/50 rounded-xl py-3 pl-10 pr-4 transition-all shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-stone-800" 
-               />
+          {/* Controls Group */}
+          <div className="flex items-center gap-2 bg-stone-200/50 dark:bg-stone-800/50 p-1 rounded-full">
+            <ThemeToggle />
+            <div className="w-px h-4 bg-stone-300 dark:bg-stone-700"></div>
+            <form action={signOut}>
+              <button
+                className="p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors rounded-full hover:bg-white dark:hover:bg-stone-700"
+                title="Sign Out"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              </button>
             </form>
           </div>
         </div>
-        
-        {/* Footer Gradient Fade (Optional aesthetic touch) */}
-        <div className="h-6 bg-gradient-to-t from-[#F5F5F4] dark:from-[#292524] to-transparent pointer-events-none -mt-6 z-10 relative"></div>
+      </div>
+
+      {/* SCROLLABLE LIST */}
+      <div className="flex-1 overflow-y-auto px-6 py-2 space-y-8 custom-scrollbar">
+
+        {tree.map(goal => (
+          <div key={goal.id} className="relative group/goal">
+
+            {/* Connector Line (Subtler) */}
+            <div className="absolute left-[11px] top-7 bottom-2 w-px bg-stone-200 dark:bg-stone-800"></div>
+
+            {/* GOAL TITLE ROW */}
+            <div className="flex items-start gap-3 mb-3 relative group/title">
+              {/* Icon */}
+              <div className="relative z-10 mt-0.5">
+                <div className="w-6 h-6 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-sm flex items-center justify-center group-hover/goal:border-orange-300 dark:group-hover/goal:border-orange-900 transition-colors">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                </div>
+              </div>
+
+              {/* Text & Actions */}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-sm text-stone-800 dark:text-stone-200 truncate pr-2">
+                    <EditableText id={goal.id} initialText={goal.title} type="goal" className="hover:text-orange-600 transition-colors" />
+                  </h3>
+
+                  {/* Floating Actions (Visible on Hover) */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-all transform translate-x-2 group-hover/title:translate-x-0">
+                    <AIGenerateButton goalId={goal.id} goalTitle={goal.title} />
+                    <form action={deleteGoal}>
+                      <input type="hidden" name="goalId" value={goal.id} />
+                      <button className="text-stone-300 hover:text-red-400 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete Goal">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* TASKS LIST */}
+            <div className="pl-9 space-y-2.5 relative">
+              {goal.steps.length === 0 && (
+                <div className="flex items-center gap-2 py-1 opacity-40">
+                  <div className="w-1 h-1 bg-stone-300 rounded-full"></div>
+                  <p className="text-[10px] text-stone-500 italic">No active rituals</p>
+                </div>
+              )}
+
+              {goal.steps.map((task: any) => (
+                <DraggableTask key={task.id} task={task}>
+                  <div className="group flex items-center justify-between px-3 py-2.5 bg-white dark:bg-[#222] rounded-lg border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 hover:-translate-y-0.5 transition-all duration-200 cursor-grab active:cursor-grabbing">
+                    <div className="flex-1 min-w-0">
+                      <EditableText id={task.id} initialText={task.title} type="task" className="text-xs font-medium text-stone-600 dark:text-stone-300 block truncate" />
+                    </div>
+
+                    {/* Drag Handle Icon (Subtle hint) */}
+                    <div className="opacity-0 group-hover:opacity-30 text-stone-400 pl-2">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="9" cy="19" r="2" /><circle cx="15" cy="5" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="15" cy="19" r="2" /></svg>
+                    </div>
+                  </div>
+                </DraggableTask>
+              ))}
+
+              {/* Add Task Input */}
+              <form action={addTask} className="mt-1 opacity-60 hover:opacity-100 transition-opacity">
+                <input type="hidden" name="date_type" value="backlog" />
+                <input type="hidden" name="goal_id" value={goal.id} />
+                <div className="flex items-center gap-2 pl-1">
+                  <span className="text-stone-300 text-sm">+</span>
+                  <input
+                    name="title"
+                    placeholder="Add step..."
+                    className="w-full bg-transparent text-xs py-1 border-b border-transparent focus:border-stone-300 dark:focus:border-stone-600 outline-none text-stone-600 dark:text-stone-400 placeholder:text-stone-300 transition-colors"
+                  />
+                </div>
+              </form>
+            </div>
+          </div>
+        ))}
+
+        {/* Add Goal Section */}
+        <div className="pt-8 pb-20">
+          <form action={addGoal} className="group relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-orange-500 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+            <input
+              name="title"
+              placeholder="New Strategic Goal..."
+              className="w-full bg-stone-100 dark:bg-stone-800/50 text-sm font-medium text-stone-800 dark:text-stone-200 placeholder:text-stone-400 outline-none border border-transparent focus:border-orange-300 dark:focus:border-orange-800/50 rounded-xl py-3 pl-10 pr-4 transition-all shadow-sm focus:shadow-md focus:bg-white dark:focus:bg-stone-800"
+            />
+          </form>
+        </div>
+      </div>
+
+      {/* Footer Gradient Fade (Optional aesthetic touch) */}
+      <div className="h-6 bg-gradient-to-t from-[#F5F5F4] dark:from-[#292524] to-transparent pointer-events-none -mt-6 z-10 relative"></div>
     </DroppableDay>
   )
 
@@ -281,6 +285,8 @@ export default async function Dashboard({
             </div>
           </div>
         )}
+        <ReviewTrigger data={reviewData} weekStart={startOfWeek} nextMonday={nextMondayStr} />
+
       </DashboardShell>
     </PlannerBoard>
   )
