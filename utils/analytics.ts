@@ -2,8 +2,8 @@ import { createClient } from '@/utils/supabase/server'
 import { getWeekDays, isSameDay } from '@/utils/date'
 
 export async function getWeeklyReport() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const { data: { user } } = await  supabase.auth.getUser()
 
   // 1. Get the current Week Range (Mon - Sun)
   const weekDays = getWeekDays(new Date())

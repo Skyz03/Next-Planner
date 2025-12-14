@@ -7,7 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 
 // Helper to get User ID safely
 async function getUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) redirect('/login') // Protect the action
@@ -187,7 +187,7 @@ export async function updateGoal(formData: FormData) {
 }
 
 export async function moveTaskToDate(taskId: string, dateStr: string | null) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
@@ -253,7 +253,7 @@ export async function generateStepsForGoal(goalId: string, goalTitle: string) {
 }
 
 export async function scheduleTaskTime(taskId: string, startTime: string | null, duration: number = 60) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
@@ -267,4 +267,10 @@ export async function scheduleTaskTime(taskId: string, startTime: string | null,
     .eq('user_id', user.id)
 
   revalidatePath('/')
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
 }
