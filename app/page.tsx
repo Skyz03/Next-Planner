@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/actions/auth'
 import { getWeeklyReviewData } from '@/actions/reflections'
-import { addTask, toggleTask, scheduleTask } from "@/actions/task"
+import { addTask, toggleTask, scheduleTask, deleteTask } from "@/actions/task"
 import { addGoal, deleteGoal } from '@/actions/goal'
 import { getWeekDays, formatDate, isSameDay } from '@/utils/date'
 import Link from 'next/link'
@@ -128,9 +128,38 @@ export default async function Dashboard({
 
             {inboxTasks.map(task => (
               <DraggableTask key={task.id} task={task}>
-                <div className="bg-white dark:bg-[#262626] p-3 rounded-lg border border-stone-200 dark:border-stone-700 shadow-sm hover:border-orange-400 cursor-grab active:cursor-grabbing group flex justify-between items-center">
-                  <span className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{task.title}</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50"></div>
+                <div className="bg-white dark:bg-[#262626] p-3 rounded-xl border border-stone-200 dark:border-stone-800/60 shadow-sm hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700/50 cursor-grab active:cursor-grabbing group flex items-center gap-3 transition-all duration-200">
+
+                  {/* 1. Status Indicator (Inbox Dot) */}
+                  <div className="flex-none">
+                    <div className="w-2 h-2 rounded-full bg-orange-400/80 ring-4 ring-orange-50 dark:ring-orange-900/10"></div>
+                  </div>
+
+                  {/* 2. Editable Title (Takes up space) */}
+                  <div className="flex-1 min-w-0">
+                    <EditableText
+                      id={task.id}
+                      initialText={task.title}
+                      type="task"
+                      className="text-sm font-medium text-stone-700 dark:text-stone-200 block truncate hover:text-orange-600 transition-colors"
+                    />
+                  </div>
+
+                  {/* 3. Actions (Delete) - Smooth Fade In */}
+                  <div className="flex-none opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+                    <form action={deleteTask}>
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <button
+                        className="p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Dismiss Thought"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </form>
+                  </div>
+
                 </div>
               </DraggableTask>
             ))}
