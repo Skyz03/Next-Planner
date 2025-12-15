@@ -15,7 +15,7 @@ export default async function ReflectionPage({
   searchParams: Promise<{ range?: string }>
 }) {
   const params = await searchParams
-  const range = (params.range === 'month' ? 'month' : 'week')
+  const range = params.range === 'month' ? 'month' : 'week'
 
   // ✅ 1. Fetch Dynamic Data (Week or Month)
   const data = await getProductivityReport(range)
@@ -30,33 +30,47 @@ export default async function ReflectionPage({
   // ✅ 3. Fetch existing journal entry for this specific date
   const userReflection = await getExistingReflection(dateStr)
 
-  const { score, total, completed, activityByDay, goalBreakdown, focusHours, peakTime, planningAccuracy } = data
+  const {
+    score,
+    total,
+    completed,
+    activityByDay,
+    goalBreakdown,
+    focusHours,
+    peakTime,
+    planningAccuracy,
+  } = data
   const isElite = score >= 80
   const isGood = score >= 50
-  const scoreColor = isElite ? 'text-emerald-500' : isGood ? 'text-stone-700 dark:text-stone-200' : 'text-orange-500'
+  const scoreColor = isElite
+    ? 'text-emerald-500'
+    : isGood
+      ? 'text-stone-700 dark:text-stone-200'
+      : 'text-orange-500'
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] dark:bg-[#1C1917] text-stone-800 dark:text-stone-200 font-sans p-6 md:p-8 transition-colors duration-500">
-
+    <div className="min-h-screen bg-[#FAFAF9] p-6 font-sans text-stone-800 transition-colors duration-500 md:p-8 dark:bg-[#1C1917] dark:text-stone-200">
       {/* HEADER & CONTROLS */}
-      <header className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-end gap-4">
+      <header className="mx-auto mb-8 flex max-w-7xl flex-col items-end justify-between gap-4 md:flex-row">
         <div>
-          <h1 className="text-3xl font-serif font-bold tracking-tight text-stone-900 dark:text-stone-50">Reflection</h1>
-          <p className="text-stone-500 text-sm mt-1">Performance analytics & strategic review.</p>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
+            Reflection
+          </h1>
+          <p className="mt-1 text-sm text-stone-500">Performance analytics & strategic review.</p>
         </div>
 
         <div className="flex items-center gap-4">
           {/* 🟢 TAB SWITCHER */}
-          <div className="bg-stone-200 dark:bg-stone-800 p-1 rounded-lg flex text-xs font-bold">
+          <div className="flex rounded-lg bg-stone-200 p-1 text-xs font-bold dark:bg-stone-800">
             <Link
               href="/reflection?range=week"
-              className={`px-4 py-1.5 rounded-md transition-all ${range === 'week' ? 'bg-white dark:bg-stone-600 shadow-sm text-stone-900 dark:text-white' : 'text-stone-500 hover:text-stone-700'}`}
+              className={`rounded-md px-4 py-1.5 transition-all ${range === 'week' ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-600 dark:text-white' : 'text-stone-500 hover:text-stone-700'}`}
             >
               Weekly
             </Link>
             <Link
               href="/reflection?range=month"
-              className={`px-4 py-1.5 rounded-md transition-all ${range === 'month' ? 'bg-white dark:bg-stone-600 shadow-sm text-stone-900 dark:text-white' : 'text-stone-500 hover:text-stone-700'}`}
+              className={`rounded-md px-4 py-1.5 transition-all ${range === 'month' ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-600 dark:text-white' : 'text-stone-500 hover:text-stone-700'}`}
             >
               Monthly
             </Link>
@@ -64,7 +78,10 @@ export default async function ReflectionPage({
 
           <div className="h-6 w-px bg-stone-300 dark:bg-stone-800"></div>
           <ThemeToggle />
-          <Link href="/" className="text-xs font-bold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded-lg hover:border-orange-500 transition-colors">
+          <Link
+            href="/"
+            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold transition-colors hover:border-orange-500 dark:border-stone-700 dark:bg-stone-800"
+          >
             Close
           </Link>
         </div>
@@ -72,23 +89,25 @@ export default async function ReflectionPage({
 
       {/* 🚀 THE COMMAND CENTER GRID */}
       {/* We use a 12-column grid to split Data (Left) and Journal (Right) */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
-
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-12">
         {/* ============================================== */}
         {/* LEFT COLUMN: DATA & STRATEGY (8 Columns)       */}
         {/* ============================================== */}
-        <div className="md:col-span-8 space-y-6">
-
+        <div className="space-y-6 md:col-span-8">
           {/* ROW 1: AI & STATIC INSIGHTS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Suspense fallback={<div className="h-full min-h-[250px] bg-stone-100 dark:bg-stone-800/50 rounded-2xl animate-pulse" />}>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Suspense
+              fallback={
+                <div className="h-full min-h-[250px] animate-pulse rounded-2xl bg-stone-100 dark:bg-stone-800/50" />
+              }
+            >
               <AIReportCard data={data} />
             </Suspense>
             <StaticAnalysis data={data} />
           </div>
 
           {/* ROW 2: VELOCITY & SANKEY */}
-          <div className="md:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:col-span-8 lg:grid-cols-2">
             {/* Velocity Chart */}
             <div className="h-full min-h-[320px]">
               <VelocityChart data={activityByDay} range={range} />
@@ -101,58 +120,75 @@ export default async function ReflectionPage({
           </div>
 
           {/* ROW 3: DETAILED METRICS GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* 1. Score */}
-            <div className="bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 text-center shadow-sm flex flex-col justify-center">
+            <div className="flex flex-col justify-center rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm dark:border-stone-800 dark:bg-[#262626]">
               <div className={`text-4xl font-black ${scoreColor}`}>{score}</div>
-              <div className="text-[10px] uppercase font-bold text-stone-400 mt-1">Prod. Score</div>
+              <div className="mt-1 text-[10px] font-bold text-stone-400 uppercase">Prod. Score</div>
             </div>
 
             {/* 2. Deep Work */}
-            <div className="bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 text-center shadow-sm flex flex-col justify-center">
-              <div className="text-4xl font-bold text-stone-800 dark:text-stone-100">{focusHours}h</div>
-              <div className="text-[10px] uppercase font-bold text-stone-400 mt-1">Deep Work</div>
+            <div className="flex flex-col justify-center rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm dark:border-stone-800 dark:bg-[#262626]">
+              <div className="text-4xl font-bold text-stone-800 dark:text-stone-100">
+                {focusHours}h
+              </div>
+              <div className="mt-1 text-[10px] font-bold text-stone-400 uppercase">Deep Work</div>
             </div>
 
             {/* 3. Peak Energy */}
-            <div className="bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 text-center shadow-sm flex flex-col justify-center">
+            <div className="flex flex-col justify-center rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm dark:border-stone-800 dark:bg-[#262626]">
               <div className="text-xl font-bold text-stone-800 dark:text-stone-100">{peakTime}</div>
-              <div className="text-[10px] uppercase font-bold text-stone-400 mt-2">Energy Peak</div>
+              <div className="mt-2 text-[10px] font-bold text-stone-400 uppercase">Energy Peak</div>
             </div>
 
             {/* 4. Calibration */}
-            <div className="bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-4 text-center shadow-sm flex flex-col justify-center">
-              <div className={`text-xl font-bold ${planningAccuracy === 'Calibrated' ? 'text-green-500' : 'text-orange-500'}`}>{planningAccuracy}</div>
-              <div className="text-[10px] uppercase font-bold text-stone-400 mt-2">Calibration</div>
+            <div className="flex flex-col justify-center rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm dark:border-stone-800 dark:bg-[#262626]">
+              <div
+                className={`text-xl font-bold ${planningAccuracy === 'Calibrated' ? 'text-green-500' : 'text-orange-500'}`}
+              >
+                {planningAccuracy}
+              </div>
+              <div className="mt-2 text-[10px] font-bold text-stone-400 uppercase">Calibration</div>
             </div>
           </div>
 
           {/* ROW 4: GOAL BREAKDOWN (Optional, kept from your previous code) */}
-          <div className="bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">Focus Distribution</h3>
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-[#262626]">
+            <h3 className="mb-4 text-xs font-bold tracking-widest text-stone-400 uppercase">
+              Focus Distribution
+            </h3>
             <div className="space-y-4">
-              {goalBreakdown.slice(0, 4).map(g => (
+              {goalBreakdown.slice(0, 4).map((g) => (
                 <div key={g.name}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="truncate pr-2 font-medium text-stone-700 dark:text-stone-300">{g.name}</span>
-                    <span className="text-stone-400">{g.completed}/{g.total}</span>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span className="truncate pr-2 font-medium text-stone-700 dark:text-stone-300">
+                      {g.name}
+                    </span>
+                    <span className="text-stone-400">
+                      {g.completed}/{g.total}
+                    </span>
                   </div>
-                  <div className="h-1.5 w-full bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(g.completed / g.total) * 100}%` }}></div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+                    <div
+                      className="h-full rounded-full bg-orange-500"
+                      style={{ width: `${(g.completed / g.total) * 100}%` }}
+                    ></div>
                   </div>
                 </div>
               ))}
-              {goalBreakdown.length === 0 && <div className="text-stone-400 text-xs italic">No strategic goals tracked this period.</div>}
+              {goalBreakdown.length === 0 && (
+                <div className="text-xs text-stone-400 italic">
+                  No strategic goals tracked this period.
+                </div>
+              )}
             </div>
           </div>
-
         </div>
 
         {/* ============================================== */}
         {/* RIGHT COLUMN: INTERACTIVE JOURNAL (4 Columns)  */}
         {/* ============================================== */}
-        <div className="md:col-span-4 h-full">
+        <div className="h-full md:col-span-4">
           <div className="sticky top-6 h-[calc(100vh-6rem)]">
             <ReflectionJournal
               dateStr={dateStr}
@@ -161,7 +197,6 @@ export default async function ReflectionPage({
             />
           </div>
         </div>
-
       </div>
     </div>
   )

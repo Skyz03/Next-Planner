@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { ThemeProvider as NextThemesProvider } from "next-themes"
+import * as React from 'react'
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
 
 // This wrapper allows us to use next-themes in the App Router
 export function ThemeProvider({

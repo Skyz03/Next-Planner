@@ -5,201 +5,193 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 async function getUser() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    if (!user) redirect('/login') // Protect the action
+  if (!user) redirect('/login') // Protect the action
 
-    return { supabase, user }
+  return { supabase, user }
 }
 
-
 export async function addTask(formData: FormData) {
-    const { supabase, user } = await getUser()
+  const { supabase, user } = await getUser()
 
-    // 1. Extract standard fields
-    const title = formData.get('title') as string
-    const goalId = formData.get('goal_id') as string
-    const dateType = formData.get('date_type') as string
-    const specificDate = formData.get('specific_date') as string
+  // 1. Extract standard fields
+  const title = formData.get('title') as string
+  const goalId = formData.get('goal_id') as string
+  const dateType = formData.get('date_type') as string
+  const specificDate = formData.get('specific_date') as string
 
-    // 2. Extract new fields (with fallbacks)
-    const priority = (formData.get('priority') as string) || 'medium'
-    const startTime = (formData.get('start_time') as string) || null // Expecting "HH:MM"
-    const durationRaw = formData.get('duration') as string
-    const duration = durationRaw ? parseInt(durationRaw) : 60 // Default 60m
+  // 2. Extract new fields (with fallbacks)
+  const priority = (formData.get('priority') as string) || 'medium'
+  const startTime = (formData.get('start_time') as string) || null // Expecting "HH:MM"
+  const durationRaw = formData.get('duration') as string
+  const duration = durationRaw ? parseInt(durationRaw) : 60 // Default 60m
 
-    if (!title) return
+  if (!title) return
 
-    // 3. Construct the Payload
-    const taskData: any = {
-        title,
-        user_id: user.id,
-        is_completed: false,
-        actual_duration: 0,
+  // 3. Construct the Payload
+  const taskData: any = {
+    title,
+    user_id: user.id,
+    is_completed: false,
+    actual_duration: 0,
 
-        // ✅ NEW: Map the extra fields
-        priority,       // 'low', 'medium', 'high'
-        start_time: startTime,
-        duration: duration,
+    // ✅ NEW: Map the extra fields
+    priority, // 'low', 'medium', 'high'
+    start_time: startTime,
+    duration: duration,
+  }
+
+  // 4. Handle Date Logic (Inbox vs Schedule)
+  if (dateType === 'inbox') {
+    taskData.due_date = null
+    taskData.goal_id = null
+  } else if (dateType === 'backlog') {
+    taskData.due_date = null
+    taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
+  } else if (specificDate) {
+    // Normalize date
+    if (/^\d{4}-\d{2}-\d{2}$/.test(specificDate)) {
+      taskData.due_date = specificDate
+    } else {
+      const date = new Date(specificDate)
+      taskData.due_date = date.toISOString().split('T')[0]
     }
+    taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
+  }
 
-    // 4. Handle Date Logic (Inbox vs Schedule)
-    if (dateType === 'inbox') {
-        taskData.due_date = null
-        taskData.goal_id = null
-    }
-    else if (dateType === 'backlog') {
-        taskData.due_date = null
-        taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
-    }
-    else if (specificDate) {
-        // Normalize date
-        if (/^\d{4}-\d{2}-\d{2}$/.test(specificDate)) {
-            taskData.due_date = specificDate
-        } else {
-            const date = new Date(specificDate)
-            taskData.due_date = date.toISOString().split('T')[0]
-        }
-        taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
-    }
+  // 5. Insert
+  const { error } = await supabase.from('tasks').insert(taskData)
 
-    // 5. Insert
-    const { error } = await supabase.from('tasks').insert(taskData)
+  if (error) {
+    console.error('Error adding task:', error)
+    return
+  }
 
-    if (error) {
-        console.error('Error adding task:', error)
-        return
-    }
-
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function toggleTask(taskId: string, isCompleted: boolean) {
-    const { supabase, user } = await getUser()
+  const { supabase, user } = await getUser()
 
-    await supabase
-        .from('tasks')
-        .update({ is_completed: isCompleted }) // 👈 Save the exact value sent from UI
-        .eq('id', taskId)
-        .eq('user_id', user.id)
+  await supabase
+    .from('tasks')
+    .update({ is_completed: isCompleted }) // 👈 Save the exact value sent from UI
+    .eq('id', taskId)
+    .eq('user_id', user.id)
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function deleteTask(formData: FormData) {
-    const { supabase, user } = await getUser()
+  const { supabase, user } = await getUser()
 
-    const taskId = formData.get('taskId') as string
+  const taskId = formData.get('taskId') as string
 
-    await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId)
-        .eq('user_id', user.id) // ✅ Ensure user can only delete their own tasks
+  await supabase.from('tasks').delete().eq('id', taskId).eq('user_id', user.id) // ✅ Ensure user can only delete their own tasks
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function scheduleTask(formData: FormData) {
-    const { supabase, user } = await getUser()
-    const taskId = formData.get('taskId') as string
-    const date = formData.get('date') as string
+  const { supabase, user } = await getUser()
+  const taskId = formData.get('taskId') as string
+  const date = formData.get('date') as string
 
-    if (!taskId || !date) return
+  if (!taskId || !date) return
 
-    await supabase
-        .from('tasks')
-        .update({ due_date: date })
-        .eq('id', taskId)
-        .eq('user_id', user.id)
+  await supabase.from('tasks').update({ due_date: date }).eq('id', taskId).eq('user_id', user.id)
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function updateTask(formData: FormData) {
-    const { supabase, user } = await getUser()
-    const taskId = formData.get('taskId') as string
-    const newTitle = formData.get('title') as string
+  const { supabase, user } = await getUser()
+  const taskId = formData.get('taskId') as string
+  const newTitle = formData.get('title') as string
 
-    if (!taskId || !newTitle) return
+  if (!taskId || !newTitle) return
 
-    await supabase
-        .from('tasks')
-        .update({ title: newTitle })
-        .eq('id', taskId)
-        .eq('user_id', user.id)
+  await supabase.from('tasks').update({ title: newTitle }).eq('id', taskId).eq('user_id', user.id)
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function moveTaskToDate(taskId: string, dateStr: string | null) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
 
-    await supabase
-        .from('tasks')
-        .update({ due_date: dateStr }) // Pass null to move back to backlog
-        .eq('id', taskId)
-        .eq('user_id', user.id)
+  await supabase
+    .from('tasks')
+    .update({ due_date: dateStr }) // Pass null to move back to backlog
+    .eq('id', taskId)
+    .eq('user_id', user.id)
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
-export async function scheduleTaskTime(taskId: string, startTime: string | null, duration: number = 60) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+export async function scheduleTaskTime(
+  taskId: string,
+  startTime: string | null,
+  duration: number = 60,
+) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
 
-    await supabase
-        .from('tasks')
-        .update({
-            start_time: startTime, // Pass null to remove from timeline (back to dock)
-            duration: duration
-        })
-        .eq('id', taskId)
-        .eq('user_id', user.id)
+  await supabase
+    .from('tasks')
+    .update({
+      start_time: startTime, // Pass null to remove from timeline (back to dock)
+      duration: duration,
+    })
+    .eq('id', taskId)
+    .eq('user_id', user.id)
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
 export async function toggleTimer(taskId: string) {
-    const supabase = await createClient()
+  const supabase = await createClient()
 
-    // 1. Get current task state
-    const { data: task } = await supabase
-        .from('tasks')
-        .select('last_started_at, actual_duration')
-        .eq('id', taskId)
-        .single()
+  // 1. Get current task state
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('last_started_at, actual_duration')
+    .eq('id', taskId)
+    .single()
 
-    if (!task) return
+  if (!task) return
 
-    const now = new Date()
+  const now = new Date()
 
-    // CASE A: STOPPING (It was running)
-    if (task.last_started_at) {
-        const startTime = new Date(task.last_started_at)
-        // Calculate minutes elapsed since start
-        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
+  // CASE A: STOPPING (It was running)
+  if (task.last_started_at) {
+    const startTime = new Date(task.last_started_at)
+    // Calculate minutes elapsed since start
+    const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
 
-        await supabase
-            .from('tasks')
-            .update({
-                last_started_at: null, // Stop it
-                actual_duration: (task.actual_duration || 0) + elapsedMinutes // Add to total
-            })
-            .eq('id', taskId)
-    }
+    await supabase
+      .from('tasks')
+      .update({
+        last_started_at: null, // Stop it
+        actual_duration: (task.actual_duration || 0) + elapsedMinutes, // Add to total
+      })
+      .eq('id', taskId)
+  }
 
-    // CASE B: STARTING (It was stopped)
-    else {
-        await supabase
-            .from('tasks')
-            .update({ last_started_at: now.toISOString() })
-            .eq('id', taskId)
-    }
+  // CASE B: STARTING (It was stopped)
+  else {
+    await supabase.from('tasks').update({ last_started_at: now.toISOString() }).eq('id', taskId)
+  }
 
-    revalidatePath('/')
+  revalidatePath('/')
 }

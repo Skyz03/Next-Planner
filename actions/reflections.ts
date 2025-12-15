@@ -4,71 +4,86 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-
 async function getUser() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    if (!user) redirect('/login') // Protect the action
+  if (!user) redirect('/login') // Protect the action
 
-    return { supabase, user }
+  return { supabase, user }
 }
 
 export async function getWeeklyReviewData(startDate: string, endDate: string) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
 
-    // 1. Get Uncompleted Tasks (Past due or due this week and not done)
-    const { data: uncompleted } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_completed', false)
-        .lte('due_date', endDate) // Includes today/past
-        .not('due_date', 'is', null) // Only scheduled ones
+  // 1. Get Uncompleted Tasks (Past due or due this week and not done)
+  const { data: uncompleted } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_completed', false)
+    .lte('due_date', endDate) // Includes today/past
+    .not('due_date', 'is', null) // Only scheduled ones
 
-    // 2. Get Stats (Completed vs Total)
-    const { data: stats } = await supabase
-        .from('tasks')
-        .select('is_completed')
-        .eq('user_id', user.id)
-        .gte('due_date', startDate)
-        .lte('due_date', endDate)
+  // 2. Get Stats (Completed vs Total)
+  const { data: stats } = await supabase
+    .from('tasks')
+    .select('is_completed')
+    .eq('user_id', user.id)
+    .gte('due_date', startDate)
+    .lte('due_date', endDate)
 
-    const completedCount = stats?.filter(t => t.is_completed).length || 0
-    const totalCount = stats?.length || 0
+  const completedCount = stats?.filter((t) => t.is_completed).length || 0
+  const totalCount = stats?.length || 0
 
-    return { uncompleted, completedCount, totalCount }
+  return { uncompleted, completedCount, totalCount }
 }
 
-export async function migrateUncompletedTasks(taskIds: string[], action: 'move-next-week' | 'move-backlog' | 'delete', nextMondayDate?: string) {
-    const supabase = await createClient()
+export async function migrateUncompletedTasks(
+  taskIds: string[],
+  action: 'move-next-week' | 'move-backlog' | 'delete',
+  nextMondayDate?: string,
+) {
+  const supabase = await createClient()
 
-    if (action === 'delete') {
-        await supabase.from('tasks').delete().in('id', taskIds)
-    }
-    else if (action === 'move-backlog') {
-        await supabase.from('tasks').update({ due_date: null, start_time: null }).in('id', taskIds)
-    }
-    else if (action === 'move-next-week' && nextMondayDate) {
-        await supabase.from('tasks').update({ due_date: nextMondayDate, start_time: null }).in('id', taskIds)
-    }
+  if (action === 'delete') {
+    await supabase.from('tasks').delete().in('id', taskIds)
+  } else if (action === 'move-backlog') {
+    await supabase.from('tasks').update({ due_date: null, start_time: null }).in('id', taskIds)
+  } else if (action === 'move-next-week' && nextMondayDate) {
+    await supabase
+      .from('tasks')
+      .update({ due_date: nextMondayDate, start_time: null })
+      .in('id', taskIds)
+  }
 
-    revalidatePath('/')
+  revalidatePath('/')
 }
 
-export async function saveWeeklyReflection(weekStart: string, completed: number, total: number, text: string) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+export async function saveWeeklyReflection(
+  weekStart: string,
+  completed: number,
+  total: number,
+  text: string,
+) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    await supabase.from('reflections').insert({
-        user_id: user?.id,
-        week_start_date: weekStart,
-        total_tasks_completed: completed,
-        total_tasks_scheduled: total,
-        reflection_text: text
-    })
+  await supabase.from('reflections').insert({
+    user_id: user?.id,
+    week_start_date: weekStart,
+    total_tasks_completed: completed,
+    total_tasks_scheduled: total,
+    reflection_text: text,
+  })
 }
 
 // export async function saveReflection(formData: FormData) {
@@ -93,45 +108,51 @@ export async function saveWeeklyReflection(weekStart: string, completed: number,
 //     revalidatePath('/')
 // }
 
-
 export async function saveReflection(weekStart: string, formData: FormData) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
 
-    const energy = parseInt(formData.get('energy') as string)
-    const notes = formData.get('notes') as string
-    const goal1 = formData.get('goal_1') as string
-    const goal2 = formData.get('goal_2') as string
-    const goal3 = formData.get('goal_3') as string
+  const energy = parseInt(formData.get('energy') as string)
+  const notes = formData.get('notes') as string
+  const goal1 = formData.get('goal_1') as string
+  const goal2 = formData.get('goal_2') as string
+  const goal3 = formData.get('goal_3') as string
 
-    // Filter out empty goals
-    const nextWeekGoals = [goal1, goal2, goal3].filter(Boolean)
+  // Filter out empty goals
+  const nextWeekGoals = [goal1, goal2, goal3].filter(Boolean)
 
-    await supabase.from('reflections').upsert({
-        user_id: user.id,
-        week_start_date: weekStart,
-        energy_rating: energy,
-        reflection_text: notes,
-        next_week_goals: nextWeekGoals,
-        updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id, week_start_date' })
+  await supabase.from('reflections').upsert(
+    {
+      user_id: user.id,
+      week_start_date: weekStart,
+      energy_rating: energy,
+      reflection_text: notes,
+      next_week_goals: nextWeekGoals,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id, week_start_date' },
+  )
 
-    revalidatePath('/reflection')
+  revalidatePath('/reflection')
 }
 
 // Fetch Existing Reflection
 export async function getExistingReflection(weekStart: string) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
 
-    const { data } = await supabase
-        .from('reflections')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('week_start_date', weekStart)
-        .single()
+  const { data } = await supabase
+    .from('reflections')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('week_start_date', weekStart)
+    .single()
 
-    return data
+  return data
 }

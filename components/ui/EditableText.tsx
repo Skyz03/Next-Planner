@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { updateTask } from '@/actions/task' // Adjust path if needed
-import { updateGoal } from "@/actions/goal"
+import { updateGoal } from '@/actions/goal'
 
 interface EditableTextProps {
   id: string
@@ -11,7 +11,7 @@ interface EditableTextProps {
   className?: string
 }
 
-export default function EditableText({ id, initialText, type, className = "" }: EditableTextProps) {
+export default function EditableText({ id, initialText, type, className = '' }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [text, setText] = useState(initialText)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,7 +56,7 @@ export default function EditableText({ id, initialText, type, className = "" }: 
         onChange={(e) => setText(e.target.value)}
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
-        className={`bg-transparent border-b border-indigo-500 outline-none w-full min-w-[100px] text-slate-800 dark:text-slate-100 ${className}`}
+        className={`w-full min-w-[100px] border-b border-indigo-500 bg-transparent text-slate-800 outline-none dark:text-slate-100 ${className}`}
       />
     )
   }
@@ -64,7 +64,7 @@ export default function EditableText({ id, initialText, type, className = "" }: 
   return (
     <span
       onClick={() => setIsEditing(true)}
-      className={`cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 -ml-1 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 ${className}`}
+      className={`-ml-1 cursor-pointer rounded border border-transparent px-1 transition-colors hover:border-slate-200 hover:bg-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800 ${className}`}
       title="Click to edit"
     >
       {text}

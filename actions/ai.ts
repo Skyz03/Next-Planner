@@ -1,18 +1,19 @@
 'use server'
 
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function generateWeeklyInsight(reportData: any) {
   try {
     // 1. Use the Flash model (Lowest token cost, fastest response)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
     // 2. Pre-calculate summaries to save tokens
     // Instead of sending 30 days of raw JSON, we send 1 sentence.
-    const topGoal = reportData.goalBreakdown[0]?.name || "General Tasks"
-    const busyDay = reportData.activityByDay.sort((a: any, b: any) => b.total - a.total)[0]?.day || "Monday"
+    const topGoal = reportData.goalBreakdown[0]?.name || 'General Tasks'
+    const busyDay =
+      reportData.activityByDay.sort((a: any, b: any) => b.total - a.total)[0]?.day || 'Monday'
 
     // 3. Ultra-Compact Prompt
     const prompt = `
@@ -36,10 +37,14 @@ export async function generateWeeklyInsight(reportData: any) {
     const text = result.response.text()
 
     // Clean and Parse
-    return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim())
-
+    return JSON.parse(
+      text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim(),
+    )
   } catch (error) {
-    console.error("AI Error", error)
+    console.error('AI Error', error)
     return null
   }
 }

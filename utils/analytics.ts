@@ -19,7 +19,9 @@ function getMonthRange(date: Date) {
 
 export async function getProductivityReport(rangeType: 'week' | 'month' = 'week') {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return null
 
   // 1. Determine Date Range
@@ -62,37 +64,37 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
   // --- ANALYSIS ENGINE ---
 
   const total = tasks.length
-  const completedTasks = tasks.filter(t => t.is_completed)
+  const completedTasks = tasks.filter((t) => t.is_completed)
   const completedCount = completedTasks.length
 
   // A. Score
   const completionRate = total > 0 ? (completedCount / total) * 100 : 0
-  const highPriorityBonus = completedTasks.filter(t => t.priority === 'high').length * 2
+  const highPriorityBonus = completedTasks.filter((t) => t.priority === 'high').length * 2
   const score = Math.min(Math.round(completionRate + highPriorityBonus), 100)
 
   // B. Focus Hours
   const totalMinutes = completedTasks.reduce((acc, t) => {
-    return acc + (t.actual_duration > 0 ? t.actual_duration : (t.duration || 60))
+    return acc + (t.actual_duration > 0 ? t.actual_duration : t.duration || 60)
   }, 0)
   const focusHours = Math.round((totalMinutes / 60) * 10) / 10
 
   // C. Daily Velocity (Dynamic for Week or Month)
-  const activityByDay = dateLabels.map(day => {
+  const activityByDay = dateLabels.map((day) => {
     // 🛑 FIX: Use the Safe Local Formatter here
     const dateStr = toLocalYMD(day)
 
-    const count = completedTasks.filter(t => t.due_date === dateStr).length
+    const count = completedTasks.filter((t) => t.due_date === dateStr).length
     return {
       day: day.toLocaleDateString('en-US', { weekday: 'short' }),
       dateNum: day.getDate(),
       fullDate: dateStr,
-      total: count
+      total: count,
     }
   })
 
   // D. Goal Breakdown
   const goalMap = new Map()
-  tasks.forEach(t => {
+  tasks.forEach((t) => {
     const goalTitle = t.goals?.title || 'Unlinked / Ad-hoc'
     if (!goalMap.has(goalTitle)) goalMap.set(goalTitle, { name: goalTitle, total: 0, completed: 0 })
     const entry = goalMap.get(goalTitle)
@@ -102,8 +104,10 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
   const goalBreakdown = Array.from(goalMap.values()).sort((a, b) => b.completed - a.completed)
 
   // E. Peak Energy
-  let morning = 0, afternoon = 0, evening = 0
-  completedTasks.forEach(t => {
+  let morning = 0,
+    afternoon = 0,
+    evening = 0
+  completedTasks.forEach((t) => {
     if (t.start_time) {
       const hour = parseInt(t.start_time.split(':')[0])
       if (hour >= 5 && hour < 12) morning++
@@ -111,33 +115,39 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
       else evening++
     }
   })
-  const peakTime = morning > afternoon && morning > evening ? 'Morning' : afternoon > morning && afternoon > evening ? 'Afternoon' : 'Evening'
+  const peakTime =
+    morning > afternoon && morning > evening
+      ? 'Morning'
+      : afternoon > morning && afternoon > evening
+        ? 'Afternoon'
+        : 'Evening'
 
   // F. Biggest Win
-  const biggestWin = completedTasks.sort((a, b) => {
-    const priorityScore = (p: string) => (p === 'high' ? 3 : p === 'medium' ? 2 : 1)
-    const scoreA = priorityScore(a.priority) + (a.goal_id ? 1 : 0)
-    const scoreB = priorityScore(b.priority) + (b.goal_id ? 1 : 0)
-    return scoreB - scoreA
-  })[0] || null
+  const biggestWin =
+    completedTasks.sort((a, b) => {
+      const priorityScore = (p: string) => (p === 'high' ? 3 : p === 'medium' ? 2 : 1)
+      const scoreA = priorityScore(a.priority) + (a.goal_id ? 1 : 0)
+      const scoreB = priorityScore(b.priority) + (b.goal_id ? 1 : 0)
+      return scoreB - scoreA
+    })[0] || null
 
   const rangeStart = new Date(startDateStr).getTime()
 
   // 1. Inputs (Where did tasks come from?)
   // "Planned": Created *before* this period started
   // "Ad-Hoc": Created *during* this period
-  const plannedTasks = tasks.filter(t => new Date(t.created_at).getTime() < rangeStart)
-  const adHocTasks = tasks.filter(t => new Date(t.created_at).getTime() >= rangeStart)
+  const plannedTasks = tasks.filter((t) => new Date(t.created_at).getTime() < rangeStart)
+  const adHocTasks = tasks.filter((t) => new Date(t.created_at).getTime() >= rangeStart)
 
   // 2. Flows
   // Flow A: Planned -> Completed
-  const plannedCompleted = plannedTasks.filter(t => t.is_completed).length
+  const plannedCompleted = plannedTasks.filter((t) => t.is_completed).length
   // Flow B: Planned -> Rolled Over
-  const plannedRolled = plannedTasks.filter(t => !t.is_completed).length
+  const plannedRolled = plannedTasks.filter((t) => !t.is_completed).length
   // Flow C: Ad-Hoc -> Completed
-  const adHocCompleted = adHocTasks.filter(t => t.is_completed).length
+  const adHocCompleted = adHocTasks.filter((t) => t.is_completed).length
   // Flow D: Ad-Hoc -> Rolled Over
-  const adHocRolled = adHocTasks.filter(t => !t.is_completed).length
+  const adHocRolled = adHocTasks.filter((t) => !t.is_completed).length
 
   const flowData = {
     planned: plannedTasks.length,
@@ -148,8 +158,8 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
       plannedToCompleted: plannedCompleted,
       plannedToRolled: plannedRolled,
       adHocToCompleted: adHocCompleted,
-      adHocToRolled: adHocRolled
-    }
+      adHocToRolled: adHocRolled,
+    },
   }
 
   return {
@@ -168,10 +178,10 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
 }
 
 function calculateAccuracy(tasks: any[]) {
-  const trackedTasks = tasks.filter(t => t.actual_duration > 0 && t.duration > 0)
+  const trackedTasks = tasks.filter((t) => t.actual_duration > 0 && t.duration > 0)
   if (trackedTasks.length === 0) return 'Calibrated' // Default to calibrated if no data
   let totalDiff = 0
-  trackedTasks.forEach(t => totalDiff += (t.actual_duration / t.duration))
+  trackedTasks.forEach((t) => (totalDiff += t.actual_duration / t.duration))
   const avgRatio = totalDiff / trackedTasks.length
   if (avgRatio > 1.1) return 'Underestimator'
   if (avgRatio < 0.9) return 'Overestimator'

@@ -4,26 +4,24 @@
 
 Featuring a premium **Glassmorphism UI**, fully responsive **Dark Mode**, and **Optimistic UI updates**, it feels like a native app on both desktop and mobile (PWA ready).
 
-   
-
 ## ✨ Key Features
 
-  * **🎯 Hierarchical Planning:** Connects **Goals** (Vision) → **Weekly Rituals** (Backlog) → **Daily Tasks** (Execution).
-  * **📅 Calendar Context:** A dynamic Weekly Strip (Mon-Sun) to focus only on today's work while keeping an eye on the week.
-  * **⚡ Optimistic UI:** Instant interactions for checking off tasks and editing text—no loading spinners.
-  * **🌗 Adaptive Theme:** Stunning Dark/Light mode using Tailwind v4 CSS variables and Mesh Gradients.
-  * **📊 Weekly Intelligence:** An automated "Bento Grid" report analyzing productivity, velocity, and goal alignment (replacing manual journaling).
-  * **📱 PWA Ready:** Installable on mobile home screens with a native app feel.
-  * **🔒 Secure:** Full Authentication and Row Level Security (RLS) via Supabase.
+- **🎯 Hierarchical Planning:** Connects **Goals** (Vision) → **Weekly Rituals** (Backlog) → **Daily Tasks** (Execution).
+- **📅 Calendar Context:** A dynamic Weekly Strip (Mon-Sun) to focus only on today's work while keeping an eye on the week.
+- **⚡ Optimistic UI:** Instant interactions for checking off tasks and editing text—no loading spinners.
+- **🌗 Adaptive Theme:** Stunning Dark/Light mode using Tailwind v4 CSS variables and Mesh Gradients.
+- **📊 Weekly Intelligence:** An automated "Bento Grid" report analyzing productivity, velocity, and goal alignment (replacing manual journaling).
+- **📱 PWA Ready:** Installable on mobile home screens with a native app feel.
+- **🔒 Secure:** Full Authentication and Row Level Security (RLS) via Supabase.
 
 ## 🛠️ Tech Stack
 
-  * **Framework:** [Next.js 14/15 (App Router)](https://nextjs.org/)
-  * **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) (CSS-first configuration)
-  * **Database & Auth:** [Supabase](https://supabase.com/)
-  * **Icons:** Custom SVG & Lucide React
-  * **Theming:** `next-themes`
-  * **Language:** TypeScript
+- **Framework:** [Next.js 14/15 (App Router)](https://nextjs.org/)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) (CSS-first configuration)
+- **Database & Auth:** [Supabase](https://supabase.com/)
+- **Icons:** Custom SVG & Lucide React
+- **Theming:** `next-themes`
+- **Language:** TypeScript
 
 ## 🚀 Getting Started
 
@@ -140,9 +138,9 @@ Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:30
 
 This project uses **Tailwind v4**. Configuration is handled inside `app/globals.css` using the `@theme` and `@custom-variant` directives.
 
-  * **Dark Mode:** Toggled via class strategy (`.dark`).
-  * **Backgrounds:** Uses complex radial gradients for a "Mesh" effect in dark mode.
-  * **Scrollbars:** Custom styling for WebKit and Firefox to match the glass aesthetic.
+- **Dark Mode:** Toggled via class strategy (`.dark`).
+- **Backgrounds:** Uses complex radial gradients for a "Mesh" effect in dark mode.
+- **Scrollbars:** Custom styling for WebKit and Firefox to match the glass aesthetic.
 
 ## 🤝 Contributing
 

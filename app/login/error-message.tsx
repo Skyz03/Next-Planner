@@ -24,13 +24,13 @@ export function ErrorMessage({ error }: { error?: string }) {
   }
 
   return (
-    <div className="bg-red-500/20 text-red-200 text-sm p-3 rounded-lg border border-red-500/50 text-center relative">
+    <div className="relative rounded-lg border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">
       <button
         onClick={() => {
           setShowError(false)
           router.replace('/login')
         }}
-        className="absolute right-2 top-2 text-red-300 hover:text-red-100"
+        className="absolute top-2 right-2 text-red-300 hover:text-red-100"
         aria-label="Dismiss error"
       >
         ×
@@ -39,4 +39,3 @@ export function ErrorMessage({ error }: { error?: string }) {
     </div>
   )
 }
-

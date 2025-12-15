@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import WeeklyReviewModal from './WeeklyReviewModal'
 
-export default function ReviewTrigger({ 
-  data, 
-  weekStart, 
-  nextMonday 
-}: { 
-  data: any, 
-  weekStart: string, 
-  nextMonday: string 
+export default function ReviewTrigger({
+  data,
+  weekStart,
+  nextMonday,
+}: {
+  data: any
+  weekStart: string
+  nextMonday: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -22,17 +22,17 @@ export default function ReviewTrigger({
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-5 py-3 rounded-full font-bold shadow-2xl hover:scale-105 transition-transform flex items-center gap-2 animate-bounce-slow"
+        className="animate-bounce-slow fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 font-bold text-white shadow-2xl transition-transform hover:scale-105 dark:bg-white dark:text-stone-900"
       >
         <span>✨</span>
         <span>Start Weekly Review</span>
       </button>
 
-      <WeeklyReviewModal 
-        isOpen={isOpen} 
-        onClose={() => setIsOpen(false)} 
+      <WeeklyReviewModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
         data={data}
         weekStart={weekStart}
         nextMonday={nextMonday}

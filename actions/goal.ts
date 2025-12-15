@@ -3,12 +3,14 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Helper to get User ID safely
 async function getUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) redirect('/login') // Protect the action
 
@@ -36,11 +38,7 @@ export async function deleteGoal(formData: FormData) {
 
   // Note: Since we set "ON DELETE SET NULL" in the database earlier,
   // deleting a goal won't delete the tasks; it just unlinks them.
-  await supabase
-    .from('goals')
-    .delete()
-    .eq('id', goalId)
-    .eq('user_id', user.id) // ✅ Ensure user can only delete their own goals
+  await supabase.from('goals').delete().eq('id', goalId).eq('user_id', user.id) // ✅ Ensure user can only delete their own goals
 
   revalidatePath('/')
 }
@@ -52,11 +50,7 @@ export async function updateGoal(formData: FormData) {
 
   if (!goalId || !newTitle) return
 
-  await supabase
-    .from('goals')
-    .update({ title: newTitle })
-    .eq('id', goalId)
-    .eq('user_id', user.id)
+  await supabase.from('goals').update({ title: newTitle }).eq('id', goalId).eq('user_id', user.id)
 
   revalidatePath('/')
 }
@@ -68,7 +62,7 @@ export async function generateStepsForGoal(goalId: string, goalTitle: string) {
 
   try {
     // 1. Configure the Model
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
 
     // 2. The Prompt
     // We ask for JSON so it's easy to parse programmatically
@@ -88,17 +82,20 @@ export async function generateStepsForGoal(goalId: string, goalTitle: string) {
 
     // 4. Parse the Clean JSON
     // Sometimes AI adds backticks, so we clean it just in case
-    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim()
+    const cleanedText = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim()
     const steps: string[] = JSON.parse(cleanedText)
 
     // 5. Insert into Database (Batch Insert)
     if (steps.length > 0) {
-      const tasksToInsert = steps.map(stepTitle => ({
+      const tasksToInsert = steps.map((stepTitle) => ({
         user_id: user.id,
         goal_id: goalId,
         title: stepTitle,
         due_date: null, // Goes to Backlog/Weekly Rituals
-        is_completed: false
+        is_completed: false,
       }))
 
       await supabase.from('tasks').insert(tasksToInsert)
@@ -106,9 +103,8 @@ export async function generateStepsForGoal(goalId: string, goalTitle: string) {
 
     revalidatePath('/')
     return { success: true }
-
   } catch (error) {
-    console.error("AI Error:", error)
-    return { success: false, error: "Failed to generate steps" }
+    console.error('AI Error:', error)
+    return { success: false, error: 'Failed to generate steps' }
   }
 }

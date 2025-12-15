@@ -4,7 +4,6 @@ import { DndContext, DragEndEvent, useSensors, useSensor, PointerSensor } from '
 import { moveTaskToDate, scheduleTaskTime } from '@/actions/task'
 import { useTransition, useId } from 'react' // <--- 1. Import useId
 
-
 export default function PlannerBoard({ children }: { children: React.ReactNode }) {
   const [isPending, startTransition] = useTransition()
 
@@ -16,7 +15,7 @@ export default function PlannerBoard({ children }: { children: React.ReactNode }
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   )
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -49,11 +48,10 @@ export default function PlannerBoard({ children }: { children: React.ReactNode }
     }
   }
 
-
   return (
     // 3. Pass the id prop here
     <DndContext id={id} sensors={sensors} onDragEnd={handleDragEnd}>
       {children}
     </DndContext>
-  );
+  )
 }

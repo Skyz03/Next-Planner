@@ -8,7 +8,7 @@ export function getWeekDays(dateInWeek: Date = new Date()) {
   const day = current.getDay()
 
   // Calculate distance to the previous Monday
-  // If today is Sunday (0), Monday was 6 days ago. 
+  // If today is Sunday (0), Monday was 6 days ago.
   // Else, Monday was (day - 1) days ago.
   const diff = current.getDate() - day + (day === 0 ? -6 : 1)
 

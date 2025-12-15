@@ -28,7 +28,7 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
-  await supabase.auth.signOut() 
+  await supabase.auth.signOut()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -51,4 +51,3 @@ export async function signout() {
   await supabase.auth.signOut()
   redirect('/login')
 }
-

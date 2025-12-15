@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 1. Enable Class-based Dark Mode */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -22,7 +22,9 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui;
   min-height: 100vh;
   /* Smooth transition when toggling modes */
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* 4. Dark Mode Overrides */
@@ -30,7 +32,7 @@ body {
 .dark body {
   /* Set text to white */
   --foreground: #ffffff;
-  
+
   /* The Dark Mesh Gradient Background */
   background-color: #0f172a; /* Slate 900 Fallback */
   background-image:
