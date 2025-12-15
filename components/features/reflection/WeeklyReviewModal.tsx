@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { migrateUncompletedTasks, saveWeeklyReflection } from '@/app/actions'
+import { migrateUncompletedTasks, saveWeeklyReflection } from '@/actions/reflections'
 import { useRouter } from 'next/navigation'
 
 export default function WeeklyReviewModal({ 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { generateStepsForGoal } from '@/app/actions'
+import { generateStepsForGoal } from '@/actions/goal'
 
 export default function AIGenerateButton({ goalId, goalTitle }: { goalId: string, goalTitle: string }) {
   const [loading, setLoading] = useState(false)

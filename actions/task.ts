@@ -149,15 +149,55 @@ export async function scheduleTaskTime(taskId: string, startTime: string | null,
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-  
+
     await supabase
-      .from('tasks')
-      .update({
-        start_time: startTime, // Pass null to remove from timeline (back to dock)
-        duration: duration
-      })
-      .eq('id', taskId)
-      .eq('user_id', user.id)
-  
+        .from('tasks')
+        .update({
+            start_time: startTime, // Pass null to remove from timeline (back to dock)
+            duration: duration
+        })
+        .eq('id', taskId)
+        .eq('user_id', user.id)
+
     revalidatePath('/')
-  }
+}
+
+export async function toggleTimer(taskId: string) {
+    const supabase = await createClient()
+
+    // 1. Get current task state
+    const { data: task } = await supabase
+        .from('tasks')
+        .select('last_started_at, actual_duration')
+        .eq('id', taskId)
+        .single()
+
+    if (!task) return
+
+    const now = new Date()
+
+    // CASE A: STOPPING (It was running)
+    if (task.last_started_at) {
+        const startTime = new Date(task.last_started_at)
+        // Calculate minutes elapsed since start
+        const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
+
+        await supabase
+            .from('tasks')
+            .update({
+                last_started_at: null, // Stop it
+                actual_duration: (task.actual_duration || 0) + elapsedMinutes // Add to total
+            })
+            .eq('id', taskId)
+    }
+
+    // CASE B: STARTING (It was stopped)
+    else {
+        await supabase
+            .from('tasks')
+            .update({ last_started_at: now.toISOString() })
+            .eq('id', taskId)
+    }
+
+    revalidatePath('/')
+}
