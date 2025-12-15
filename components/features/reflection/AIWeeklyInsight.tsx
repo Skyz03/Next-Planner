@@ -1,4 +1,4 @@
-import { generateWeeklyInsight } from '../app/reflection/actions'
+import { generateWeeklyInsight } from '../../../app/reflection/actions'
 
 export default async function AIWeeklyInsight({ data }: { data: any }) {
     // This line pauses this specific component until AI responds

@@ -1,8 +1,8 @@
 'use client'
 
 import { useOptimistic, startTransition } from 'react'
-import { toggleTask, deleteTask } from '@/app/actions'
-import EditableText from './EditableText'
+import { toggleTask, deleteTask } from '@/actions/task'
+import EditableText from '../../ui/EditableText'
 
 export default function TaskItem({ task }: { task: any }) {
   const [optimisticTask, setOptimisticStatus] = useOptimistic(

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { addTask } from '@/app/actions'
+import { addTask } from '@/actions/task'
 
 export default function InboxCapture() {
     const [isOpen, setIsOpen] = useState(false)

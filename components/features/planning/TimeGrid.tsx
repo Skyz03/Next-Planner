@@ -3,7 +3,7 @@
 import { useDroppable } from '@dnd-kit/core'
 import DraggableTask from './DraggableTask'
 import { useEffect, useState, useRef, useOptimistic, startTransition } from 'react'
-import { scheduleTaskTime, toggleTask } from '@/app/actions'
+import { scheduleTaskTime, toggleTask } from '@/actions/task'
 import TaskTimer from './TaskTimer'
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5) // 5 AM to 10 PM

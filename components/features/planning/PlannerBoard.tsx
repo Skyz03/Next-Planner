@@ -1,7 +1,7 @@
 'use client'
 
 import { DndContext, DragEndEvent, useSensors, useSensor, PointerSensor } from '@dnd-kit/core'
-import { moveTaskToDate, scheduleTaskTime } from '@/app/actions'
+import { moveTaskToDate, scheduleTaskTime } from '@/actions/task'
 import { useTransition, useId } from 'react' // <--- 1. Import useId
 
 

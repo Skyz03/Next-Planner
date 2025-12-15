@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import InboxCapture from './InboxCapture'
+import InboxCapture from '../features/inbox/InboxCapture'
 
 export default function DashboardShell({
     sidebar,

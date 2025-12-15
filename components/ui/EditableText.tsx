@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { updateTask, updateGoal } from '@/app/actions' // Adjust path if needed
+import { updateTask } from '@/actions/task' // Adjust path if needed
+import { updateGoal } from "@/actions/goal"
 
 interface EditableTextProps {
   id: string
@@ -61,8 +62,8 @@ export default function EditableText({ id, initialText, type, className = "" }: 
   }
 
   return (
-    <span 
-      onClick={() => setIsEditing(true)} 
+    <span
+      onClick={() => setIsEditing(true)}
       className={`cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 -ml-1 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 ${className}`}
       title="Click to edit"
     >

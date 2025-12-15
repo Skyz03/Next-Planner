@@ -3,8 +3,8 @@
 import { useDroppable } from '@dnd-kit/core'
 import DraggableTask from './DraggableTask'
 import { formatDate, isSameDay } from '@/utils/date'
-import EditableText from './EditableText'
-import { deleteTask } from '@/app/actions' // <--- 1. Import Action
+import EditableText from '../../ui/EditableText'
+import { deleteTask } from '@/actions/task' // <--- 1. Import Action
 
 // Individual Column Component
 function DayColumn({ day, tasks, isToday }: { day: Date, tasks: any[], isToday: boolean }) {

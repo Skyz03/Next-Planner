@@ -1,9 +1,9 @@
 import { getWeeklyReport } from '@/utils/analytics'
 import Link from 'next/link'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Suspense } from 'react'
-import AIWeeklyInsight from '@/components/AIWeeklyInsight'
-import InsightSkeleton from '@/components/InsightSkeleton'
+import AIWeeklyInsight from '@/components/features/reflection/AIWeeklyInsight'
+import InsightSkeleton from '@/components/features/reflection/InsightSkeleton'
 import { getWeekDays } from '@/utils/date'
 
 export default async function ReflectionPage() {
