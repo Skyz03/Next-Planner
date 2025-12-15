@@ -217,7 +217,19 @@ export default async function Dashboard({
                 <div className="flex items-center gap-2 pl-1">
                   <span className="text-stone-300 text-sm">+</span>
                   <input name="title" placeholder="Add step..." className="w-full bg-transparent text-xs py-1 border-b border-transparent focus:border-stone-300 dark:focus:border-stone-600 outline-none text-stone-600 dark:text-stone-400 placeholder:text-stone-300 transition-colors" />
+                  <select
+                    name="priority"
+                    defaultValue="medium"
+                    className="bg-transparent text-[11px] text-stone-500 dark:text-stone-400 outline-none border border-stone-200 dark:border-stone-700 rounded px-2 py-1"
+                    title="Priority"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                  <input type="number" name="duration" defaultValue={60} hidden />
                 </div>
+                <button type='submit' className='hiddeb'></button>
               </form>
             </div>
           </div>

@@ -17,52 +17,54 @@ async function getUser() {
 export async function addTask(formData: FormData) {
     const { supabase, user } = await getUser()
 
+    // 1. Extract standard fields
     const title = formData.get('title') as string
     const goalId = formData.get('goal_id') as string
-    const dateType = formData.get('date_type') as string // 'inbox' | 'backlog' | undefined
+    const dateType = formData.get('date_type') as string
     const specificDate = formData.get('specific_date') as string
+
+    // 2. Extract new fields (with fallbacks)
+    const priority = (formData.get('priority') as string) || 'medium'
+    const startTime = (formData.get('start_time') as string) || null // Expecting "HH:MM"
+    const durationRaw = formData.get('duration') as string
+    const duration = durationRaw ? parseInt(durationRaw) : 60 // Default 60m
 
     if (!title) return
 
-    // 1. Base Task Object
-    // We add 'duration: 60' so your new Timer/Reality Check UI works immediately
+    // 3. Construct the Payload
     const taskData: any = {
         title,
         user_id: user.id,
-        priority: 'medium',
-        duration: 60,
-        actual_duration: 0, // Reset timer tracking
-        is_completed: false
+        is_completed: false,
+        actual_duration: 0,
+
+        // ✅ NEW: Map the extra fields
+        priority,       // 'low', 'medium', 'high'
+        start_time: startTime,
+        duration: duration,
     }
 
-    // 2. Logic Branching
+    // 4. Handle Date Logic (Inbox vs Schedule)
     if (dateType === 'inbox') {
-        // 📥 INBOX MODE: Rapid Capture
-        // Explicitly nullify connections so it sits in the "Inbox" section
         taskData.due_date = null
         taskData.goal_id = null
     }
     else if (dateType === 'backlog') {
-        // 📋 BACKLOG MODE: Strategic Planning
-        // Has a goal (context), but no specific time yet
         taskData.due_date = null
         taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
     }
     else if (specificDate) {
-        // 🗓️ SCHEDULED MODE: Direct execution
-        // Normalize date string
+        // Normalize date
         if (/^\d{4}-\d{2}-\d{2}$/.test(specificDate)) {
             taskData.due_date = specificDate
         } else {
             const date = new Date(specificDate)
             taskData.due_date = date.toISOString().split('T')[0]
         }
-
-        // Attach goal if present
         taskData.goal_id = goalId && goalId !== 'none' ? goalId : null
     }
 
-    // 3. Database Insert
+    // 5. Insert
     const { error } = await supabase.from('tasks').insert(taskData)
 
     if (error) {
@@ -70,7 +72,7 @@ export async function addTask(formData: FormData) {
         return
     }
 
-    revalidatePath('/', 'layout')
+    revalidatePath('/')
 }
 
 export async function toggleTask(taskId: string, isCompleted: boolean) {
