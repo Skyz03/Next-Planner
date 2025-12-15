@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
-import { signOut, getWeeklyReviewData } from './actions'
+import { signOut } from '@/actions/auth'
+import { getWeeklyReviewData } from '@/actions/reflections'
 import { addTask, toggleTask, scheduleTask } from "@/actions/task"
 import { addGoal, deleteGoal } from '@/actions/goal'
 import { getWeekDays, formatDate, isSameDay } from '@/utils/date'

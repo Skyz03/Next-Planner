@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { toggleTimer } from '@/app/actions'
+import { toggleTimer } from '@/actions/task'
 
 export default function TaskTimer({ task }: { task: any }) {
     const [isRunning, setIsRunning] = useState(!!task.last_started_at)
