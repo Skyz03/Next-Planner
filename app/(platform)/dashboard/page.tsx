@@ -383,7 +383,7 @@ export default async function Dashboard({
               {/* Arrows Group */}
               <div className="flex items-center gap-0.5">
                 <Link
-                  href={`/?date=${formatDate(prevWeek)}&view=${viewMode}`}
+                  href={`/dashboard?date=${formatDate(prevWeek)}&view=${viewMode}`}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition-all hover:bg-white hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-200"
                 >
                   <svg
@@ -402,18 +402,17 @@ export default async function Dashboard({
 
                 {/* TODAY BUTTON (Contextual) */}
                 <Link
-                  href={`/?date=${todayStr}&view=${viewMode}`}
-                  className={`flex h-7 items-center justify-center rounded-lg px-3 text-xs font-bold transition-all ${
-                    normalizedDateStr === todayStr
-                      ? 'cursor-default bg-white text-stone-800 shadow-sm dark:bg-stone-700 dark:text-stone-100'
-                      : 'text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20'
-                  }`}
+                  href={`/dashboard?date=${todayStr}&view=${viewMode}`}
+                  className={`flex h-7 items-center justify-center rounded-lg px-3 text-xs font-bold transition-all ${normalizedDateStr === todayStr
+                    ? 'cursor-default bg-white text-stone-800 shadow-sm dark:bg-stone-700 dark:text-stone-100'
+                    : 'text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20'
+                    }`}
                 >
                   Today
                 </Link>
 
                 <Link
-                  href={`/?date=${formatDate(nextWeek)}&view=${viewMode}`}
+                  href={`/dashboard?date=${formatDate(nextWeek)}&view=${viewMode}`}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition-all hover:bg-white hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-200"
                 >
                   <svg
@@ -444,13 +443,13 @@ export default async function Dashboard({
           {/* VIEW TOGGLE */}
           <div className="flex rounded-lg bg-stone-200 p-1 dark:bg-stone-800">
             <Link
-              href={`/?date=${normalizedDateStr}&view=focus`}
+              href={`/dashboard?date=${normalizedDateStr}&view=focus`}
               className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'focus' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
             >
               Focus
             </Link>
             <Link
-              href={`/?date=${normalizedDateStr}&view=plan`}
+              href={`/dashboard?date=${normalizedDateStr}&view=plan`}
               className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'plan' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
             >
               Plan
@@ -478,13 +477,12 @@ export default async function Dashboard({
                   return (
                     <DroppableDay key={dateStr} dateStr={dateStr} className="h-full flex-1">
                       <Link
-                        href={`/?date=${dateStr}&view=focus`}
+                        href={`/dashboard?date=${dateStr}&view=focus`}
                         scroll={false}
-                        className={`block flex h-full flex-col items-center justify-center gap-1 rounded-xl border-2 transition-all ${
-                          isActive
-                            ? 'border-stone-800 bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                            : 'border-transparent bg-white text-stone-500 hover:border-orange-300 dark:bg-stone-800'
-                        } `}
+                        className={`block flex h-full flex-col items-center justify-center gap-1 rounded-xl border-2 transition-all ${isActive
+                          ? 'border-stone-800 bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'border-transparent bg-white text-stone-500 hover:border-orange-300 dark:bg-stone-800'
+                          } `}
                       >
                         <span className="text-[10px] font-bold uppercase">
                           {day.toLocaleDateString('en-US', { weekday: 'short' })}
