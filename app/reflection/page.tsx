@@ -7,6 +7,7 @@ import AIReportCard from '@/components/features/reflection/AIReportCard'
 import VelocityChart from '@/components/features/reflection/VelocityChart'
 import StaticAnalysis from '@/components/features/reflection/StaticAnalysis'
 import ReflectionJournal from '@/components/features/reflection/ReflectionJournal'
+import FlowSankey from '@/components/features/reflection/FlowSankey'
 
 export default async function ReflectionPage({
   searchParams,
@@ -86,9 +87,17 @@ export default async function ReflectionPage({
             <StaticAnalysis data={data} />
           </div>
 
-          {/* ROW 2: VELOCITY CHART */}
-          <div className="md:col-span-4 lg:col-span-4 bg-white dark:bg-[#262626] border border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm">
-            <VelocityChart data={activityByDay} range={range} />
+          {/* ROW 2: VELOCITY & SANKEY */}
+          <div className="md:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Velocity Chart */}
+            <div className="h-full min-h-[320px]">
+              <VelocityChart data={activityByDay} range={range} />
+            </div>
+
+            {/* Flow Sankey - No fixed height needed on wrapper, component handles it */}
+            <div className="h-full">
+              <FlowSankey data={data.flowData} />
+            </div>
           </div>
 
           {/* ROW 3: DETAILED METRICS GRID */}

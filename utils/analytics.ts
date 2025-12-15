@@ -1,10 +1,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { getWeekDays, formatDate } from '@/utils/date'
 
-// Helper to get Month Date Range
+// ✅ NEW: Safe Local Date Formatter
+// Extracts YYYY-MM-DD exactly as they appear in local time, ignoring timezone shifts.
+function toLocalYMD(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function getMonthRange(date: Date) {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1)
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+  // Create dates at Noon (12:00) instead of Midnight (00:00) to avoid Daylight Savings shifts
+  const start = new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0)
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 12, 0, 0)
   return { start, end }
 }
 
@@ -19,12 +28,18 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
 
   if (rangeType === 'month') {
     const { start, end } = getMonthRange(today)
-    startDateStr = formatDate(start)
-    endDateStr = formatDate(end)
-    // Generate array of all days in month for the chart
+    startDateStr = toLocalYMD(start)
+    endDateStr = toLocalYMD(end)
+
+    // Generate array of all days in month
     dateLabels = []
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      dateLabels.push(new Date(d))
+    const current = new Date(start)
+    // Reset to 1st of month to be safe
+    current.setDate(1)
+
+    while (current.getMonth() === start.getMonth()) {
+      dateLabels.push(new Date(current))
+      current.setDate(current.getDate() + 1)
     }
   } else {
     // Default to Week
@@ -63,11 +78,13 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
 
   // C. Daily Velocity (Dynamic for Week or Month)
   const activityByDay = dateLabels.map(day => {
-    const dateStr = formatDate(day)
+    // 🛑 FIX: Use the Safe Local Formatter here
+    const dateStr = toLocalYMD(day)
+
     const count = completedTasks.filter(t => t.due_date === dateStr).length
     return {
-      day: day.toLocaleDateString('en-US', { weekday: 'short' }), // "Mon"
-      dateNum: day.getDate(), // 15
+      day: day.toLocaleDateString('en-US', { weekday: 'short' }),
+      dateNum: day.getDate(),
       fullDate: dateStr,
       total: count
     }
@@ -104,16 +121,55 @@ export async function getProductivityReport(rangeType: 'week' | 'month' = 'week'
     return scoreB - scoreA
   })[0] || null
 
+  const rangeStart = new Date(startDateStr).getTime()
+
+  // 1. Inputs (Where did tasks come from?)
+  // "Planned": Created *before* this period started
+  // "Ad-Hoc": Created *during* this period
+  const plannedTasks = tasks.filter(t => new Date(t.created_at).getTime() < rangeStart)
+  const adHocTasks = tasks.filter(t => new Date(t.created_at).getTime() >= rangeStart)
+
+  // 2. Flows
+  // Flow A: Planned -> Completed
+  const plannedCompleted = plannedTasks.filter(t => t.is_completed).length
+  // Flow B: Planned -> Rolled Over
+  const plannedRolled = plannedTasks.filter(t => !t.is_completed).length
+  // Flow C: Ad-Hoc -> Completed
+  const adHocCompleted = adHocTasks.filter(t => t.is_completed).length
+  // Flow D: Ad-Hoc -> Rolled Over
+  const adHocRolled = adHocTasks.filter(t => !t.is_completed).length
+
+  const flowData = {
+    planned: plannedTasks.length,
+    adHoc: adHocTasks.length,
+    completed: plannedCompleted + adHocCompleted,
+    rolledOver: plannedRolled + adHocRolled,
+    flows: {
+      plannedToCompleted: plannedCompleted,
+      plannedToRolled: plannedRolled,
+      adHocToCompleted: adHocCompleted,
+      adHocToRolled: adHocRolled
+    }
+  }
+
   return {
-    rangeType, // Pass this back so UI knows what to show
-    score, total, completed: completedCount, activityByDay, goalBreakdown, biggestWin, focusHours, peakTime,
-    planningAccuracy: calculateAccuracy(completedTasks)
+    rangeType,
+    score,
+    total,
+    completed: completedCount,
+    activityByDay,
+    goalBreakdown,
+    biggestWin,
+    focusHours,
+    peakTime,
+    planningAccuracy: calculateAccuracy(completedTasks),
+    flowData,
   }
 }
 
 function calculateAccuracy(tasks: any[]) {
   const trackedTasks = tasks.filter(t => t.actual_duration > 0 && t.duration > 0)
-  if (trackedTasks.length === 0) return 'No Data'
+  if (trackedTasks.length === 0) return 'Calibrated' // Default to calibrated if no data
   let totalDiff = 0
   trackedTasks.forEach(t => totalDiff += (t.actual_duration / t.duration))
   const avgRatio = totalDiff / trackedTasks.length
