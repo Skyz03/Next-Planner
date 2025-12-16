@@ -1,103 +1,9 @@
 'use client'
 
-import { useDroppable } from '@dnd-kit/core'
+import DroppableDay from './DroppableDay'
 import DraggableTask from './DraggableTask'
-import { formatDate, isSameDay } from '@/utils/date'
-import EditableText from '../../ui/EditableText'
-import { deleteTask } from '@/actions/task' // <--- 1. Import Action
+import TaskItem from './TaskItem'
 
-// Individual Column Component
-function DayColumn({ day, tasks, isToday }: { day: Date; tasks: any[]; isToday: boolean }) {
-  const dateStr = formatDate(day)
-  const { setNodeRef, isOver } = useDroppable({
-    id: `date-${dateStr}`,
-    data: { date: dateStr },
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`flex h-full min-w-[200px] flex-1 flex-col border-r border-stone-200 transition-colors last:border-r-0 dark:border-stone-800 ${
-        isOver ? 'bg-orange-50 dark:bg-orange-900/10' : ''
-      }`}
-    >
-      {/* Column Header */}
-      <div
-        className={`border-b border-stone-100 p-4 text-center dark:border-stone-800 ${isToday ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}
-      >
-        <div className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-          {day.toLocaleDateString('en-US', { weekday: 'short' })}
-        </div>
-        <div
-          className={`font-serif text-xl font-bold ${isToday ? 'text-orange-600' : 'text-stone-700 dark:text-stone-300'}`}
-        >
-          {day.getDate()}
-        </div>
-      </div>
-
-      {/* Task List */}
-      <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto p-2">
-        {tasks.map((task) => (
-          <DraggableTask key={task.id} task={task}>
-            {/* 2. Update Card Styling to be 'relative' for absolute positioning of delete button */}
-            <div className="group relative cursor-grab rounded-xl border border-stone-200 bg-white p-3 pr-6 text-left shadow-sm transition-all hover:border-orange-300 hover:shadow-md dark:border-stone-700 dark:bg-stone-800 dark:hover:border-orange-700">
-              <EditableText
-                id={task.id}
-                initialText={task.title}
-                type="task"
-                className="line-clamp-2 text-xs font-medium text-stone-700 dark:text-stone-200"
-              />
-
-              {task.goals && (
-                <div className="mt-2 flex items-center gap-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-orange-400"></div>
-                  <span className="max-w-[120px] truncate text-[9px] tracking-wider text-stone-400 uppercase">
-                    {task.goals.title}
-                  </span>
-                </div>
-              )}
-
-              {/* 3. The Delete Button (Hidden until hover) */}
-              <form
-                action={deleteTask}
-                className="absolute top-1 right-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                // Stop propagation so clicking delete doesn't start a drag
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <input type="hidden" name="taskId" value={task.id} />
-                <button
-                  className="rounded-md p-1 text-stone-300 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                  title="Delete Task"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </form>
-            </div>
-          </DraggableTask>
-        ))}
-        {tasks.length === 0 && (
-          <div className="flex h-full items-center justify-center opacity-0 transition-opacity hover:opacity-100">
-            <span className="text-xs text-stone-300 italic">+ Drop here</span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Main Grid Container
 export default function PlanningGrid({
   weekDays,
   allTasks,
@@ -105,18 +11,79 @@ export default function PlanningGrid({
   weekDays: Date[]
   allTasks: any[]
 }) {
-  const today = new Date()
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0]
+  }
 
   return (
-    <div className="h-full flex-1 overflow-x-auto overflow-y-hidden">
-      <div className="flex h-full min-w-max">
+    <div className="h-full w-full overflow-x-auto overflow-y-hidden custom-scrollbar bg-[#F5F5F4] dark:bg-[#121212]">
+      {/* THE GRID LAYOUT 
+         Added gap-6 for breathing room.
+         Added min-w to ensure columns don't crush on small screens.
+      */}
+      <div className="flex h-full min-w-max p-8 gap-6">
+
         {weekDays.map((day) => {
           const dateStr = formatDate(day)
-          // Filter tasks for this specific column
-          const daysTasks = allTasks.filter((t) => t.due_date === dateStr)
+          const isToday = formatDate(new Date()) === dateStr
+          const dayTasks = allTasks.filter((t) => t.due_date === dateStr)
+
+          // Total Estimated Time
+          const totalMinutes = dayTasks.reduce((acc, t) => acc + (t.duration || 0), 0)
+          const hours = Math.floor(totalMinutes / 60)
+          const mins = totalMinutes % 60
+          const timeLabel = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
 
           return (
-            <DayColumn key={dateStr} day={day} tasks={daysTasks} isToday={isSameDay(day, today)} />
+            <DroppableDay
+              key={dateStr}
+              dateStr={dateStr}
+              className={`
+                group relative flex h-full w-80 flex-col rounded-3xl border transition-colors duration-300
+                ${isToday
+                  ? 'bg-white dark:bg-[#1C1917] border-stone-200 dark:border-stone-800 shadow-xl shadow-stone-200/50 dark:shadow-black/50'
+                  : 'bg-stone-100/50 dark:bg-[#18181b] border-transparent hover:border-stone-200 dark:hover:border-stone-800'
+                }
+              `}
+            >
+              {/* DAY HEADER */}
+              <div className="flex-none p-5 pb-2">
+                <div className="flex items-end justify-between mb-1">
+                  <span className={`text-sm font-bold uppercase tracking-widest ${isToday ? 'text-orange-500' : 'text-stone-400'}`}>
+                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </span>
+                  {dayTasks.length > 0 && (
+                    <span className="text-[10px] font-mono text-stone-400 bg-stone-200 dark:bg-stone-800 px-1.5 py-0.5 rounded">
+                      {timeLabel}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className={`font-serif text-3xl font-bold ${isToday ? 'text-stone-900 dark:text-white' : 'text-stone-400 dark:text-stone-600'}`}>
+                    {day.getDate()}
+                  </span>
+                </div>
+              </div>
+
+              {/* TASKS CONTAINER (Scrollable within the day) */}
+              <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar space-y-3">
+                {dayTasks.map((task) => (
+                  <DraggableTask key={task.id} task={task}>
+                    <TaskItem task={task} />
+                  </DraggableTask>
+                ))}
+
+                {/* Empty State / Drop Target Area */}
+                {dayTasks.length === 0 && (
+                  <div className="h-32 border-2 border-dashed border-stone-200 dark:border-stone-800 rounded-xl flex items-center justify-center">
+                    <span className="text-xs text-stone-400 font-medium">Drop plan here</span>
+                  </div>
+                )}
+
+                {/* Bottom spacer for easy dropping at end of list */}
+                <div className="h-12 w-full transition-all group-hover:h-24"></div>
+              </div>
+            </DroppableDay>
           )
         })}
       </div>
