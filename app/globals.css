@@ -11,8 +11,10 @@
 
 :root {
   /* Default (Light Mode) Colors */
-  --background: #f9fafb; /* Gray 50 */
-  --foreground: #1e293b; /* Slate 800 */
+  --background: #f9fafb;
+  /* Gray 50 */
+  --foreground: #1e293b;
+  /* Slate 800 */
 }
 
 /* 3. Base Body Styles */
@@ -34,7 +36,8 @@ body {
   --foreground: #ffffff;
 
   /* The Dark Mesh Gradient Background */
-  background-color: #0f172a; /* Slate 900 Fallback */
+  background-color: #0f172a;
+  /* Slate 900 Fallback */
   background-image:
     radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
     radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
@@ -53,9 +56,27 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.5); /* Visible in both modes */
+  background: rgba(156, 163, 175, 0.5);
+  /* Visible in both modes */
   border-radius: 10px;
 }
+
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.driver-popover.driver-popover-theme {
+  @apply bg-[#FAFAF9] dark:bg-[#1C1917] text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 rounded-xl shadow-2xl;
+}
+
+.driver-popover-title {
+  @apply font-serif text-xl font-bold mb-2;
+}
+
+.driver-popover-description {
+  @apply text-sm text-stone-500 dark:text-stone-400;
+}
+
+.driver-popover-footer button {
+  @apply bg-orange-500 text-white rounded-lg px-3 py-1 text-xs font-bold hover:bg-orange-600 transition-colors shadow-none text-shadow-none border-none;
 }

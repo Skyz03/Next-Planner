@@ -17,6 +17,7 @@ import DashboardShell from '@/components/layout/DashboardShell'
 import TimeGrid from '@/components/features/planning/TimeGrid'
 import ReviewTrigger from '@/components/features/reflection/ReviewTrigger'
 import SidebarGoal from '@/components/features/planning/SidebarGoal'
+import OnboardingTour from '@/components/features/onboarding/OnboardingTour'
 
 export default async function Dashboard({
   searchParams,
@@ -154,7 +155,8 @@ export default async function Dashboard({
         {/* 2. REFLECTION TRIGGER (Below Title) */}
         <Link
           href="/reflection"
-          // We removed target="_blank" to keep navigation within the app
+          id="tour-reflection"
+          target='_blank'
           className="flex items-center justify-between rounded-xl bg-orange-500/10 p-3 text-sm font-bold text-orange-600 transition-colors hover:bg-orange-500/20 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-800/30"
           title="Weekly Reflection"
         >
@@ -186,7 +188,7 @@ export default async function Dashboard({
       {/* 3. SCROLLABLE AREA (Inbox, Goals, etc.) */}
       <div className="custom-scrollbar flex-1 overflow-y-auto px-4 pb-24">
         {/* INBOX SECTION */}
-        <div className="mb-8 px-4">
+        <div className="mb-8 px-4" id="tour-inbox" >
           <div className="mb-3 flex items-center gap-2">
             <span className="text-[11px] font-bold tracking-widest text-stone-400 uppercase">
               Inbox
@@ -284,6 +286,7 @@ export default async function Dashboard({
             </div>
             <input
               name="title"
+              id="tour-goals"
               placeholder="New Strategic Goal..."
               className="w-full rounded-xl border border-transparent bg-stone-100 py-3 pr-4 pl-10 text-sm font-medium text-stone-800 shadow-sm transition-all outline-none placeholder:text-stone-400 focus:border-orange-300 focus:bg-white focus:shadow-md dark:bg-stone-800/50 dark:text-stone-200 dark:focus:border-orange-800/50 dark:focus:bg-stone-800"
             />
@@ -298,7 +301,8 @@ export default async function Dashboard({
 
   return (
     <PlannerBoard>
-      <DashboardShell sidebar={sidebarContent} viewMode={viewMode}>
+      <OnboardingTour hasSeenTour={false} />
+      <DashboardShell sidebar={sidebarContent} viewMode={viewMode} >
         {/* HEADER: COMMAND CENTER */}
         <div className="relative z-40 flex h-16 items-center justify-between border-b border-stone-200 bg-[#FAFAF9] px-8 pl-16 transition-colors duration-500 dark:border-stone-800 dark:bg-[#1C1917]">
           <div className="flex items-center gap-6">
@@ -331,11 +335,10 @@ export default async function Dashboard({
                 {/* TODAY BUTTON (Contextual) */}
                 <Link
                   href={`/dashboard?date=${todayStr}&view=${viewMode}`}
-                  className={`flex h-7 items-center justify-center rounded-lg px-3 text-xs font-bold transition-all ${
-                    normalizedDateStr === todayStr
-                      ? 'cursor-default bg-white text-stone-800 shadow-sm dark:bg-stone-700 dark:text-stone-100'
-                      : 'text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20'
-                  }`}
+                  className={`flex h-7 items-center justify-center rounded-lg px-3 text-xs font-bold transition-all ${normalizedDateStr === todayStr
+                    ? 'cursor-default bg-white text-stone-800 shadow-sm dark:bg-stone-700 dark:text-stone-100'
+                    : 'text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20'
+                    }`}
                 >
                   Today
                 </Link>
@@ -370,14 +373,16 @@ export default async function Dashboard({
           </div>
 
           {/* VIEW TOGGLE */}
-          <div className="flex rounded-lg bg-stone-200 p-1 dark:bg-stone-800">
+          <div id="tour-planner" className="flex rounded-lg bg-stone-200 p-1 dark:bg-stone-800">
             <Link
+              id="view-toggle-focus"
               href={`/dashboard?date=${normalizedDateStr}&view=focus`}
               className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'focus' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
             >
               Focus
             </Link>
             <Link
+              id="view-toggle-plan"
               href={`/dashboard?date=${normalizedDateStr}&view=plan`}
               className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'plan' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
             >
@@ -408,11 +413,10 @@ export default async function Dashboard({
                       <Link
                         href={`/dashboard?date=${dateStr}&view=focus`}
                         scroll={false}
-                        className={`block flex h-full flex-col items-center justify-center gap-1 rounded-xl border-2 transition-all ${
-                          isActive
-                            ? 'border-stone-800 bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                            : 'border-transparent bg-white text-stone-500 hover:border-orange-300 dark:bg-stone-800'
-                        } `}
+                        className={`block flex h-full flex-col items-center justify-center gap-1 rounded-xl border-2 transition-all ${isActive
+                          ? 'border-stone-800 bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                          : 'border-transparent bg-white text-stone-500 hover:border-orange-300 dark:bg-stone-800'
+                          } `}
                       >
                         <span className="text-[10px] font-bold uppercase">
                           {day.toLocaleDateString('en-US', { weekday: 'short' })}
@@ -434,7 +438,7 @@ export default async function Dashboard({
                 })}
               </div>
             </div>
-            <div className="relative z-10 flex-1 overflow-hidden">
+            <div id="tour-focus" className="relative z-10 flex-1 overflow-hidden">
               <TimeGrid tasks={allWeekTasks.filter((t) => t.due_date === normalizedDateStr)} />
             </div>
           </div>
