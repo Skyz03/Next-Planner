@@ -15,6 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.8.0",
+    "@vercel/analytics": "^1.6.1",
     "driver.js": "^1.4.0",
     "lucide-react": "^0.561.0",
     "next": "16.0.7",
