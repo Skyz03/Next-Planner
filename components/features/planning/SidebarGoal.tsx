@@ -7,6 +7,7 @@ import EditableText from '@/components/ui/EditableText'
 import AIGenerateButton from '@/components/features/planning/AIGenerateButton'
 import { addTask } from '@/actions/task'
 import { deleteGoal } from '@/actions/goal'
+import DurationInput from '@/components/ui/DurationInput'
 
 // Assuming deleteGoal is imported from @/actions/goal
 import { deleteGoal as deleteGoalAction } from '@/actions/goal'
@@ -114,6 +115,11 @@ export default function SidebarGoal({ goal }: { goal: any }) {
                 placeholder="Add next step..."
                 className="w-full border-b border-transparent bg-transparent py-1 text-xs text-stone-600 transition-colors outline-none placeholder:text-stone-300 focus:border-stone-300 dark:text-stone-400 dark:focus:border-stone-600"
               />
+              {/* ✅ NEW: Duration Picker */}
+              <div className="opacity-0 group-hover/add:opacity-100 focus-within:opacity-100 transition-opacity">
+                <DurationInput defaultMinutes={60} />
+              </div>
+
               <select
                 name="priority"
                 defaultValue="medium"
