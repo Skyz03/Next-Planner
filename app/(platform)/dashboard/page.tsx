@@ -18,6 +18,7 @@ import TimeGrid from '@/components/features/planning/TimeGrid'
 import ReviewTrigger from '@/components/features/reflection/ReviewTrigger'
 import SidebarGoal from '@/components/features/planning/SidebarGoal'
 import OnboardingTour from '@/components/features/onboarding/OnboardingTour'
+import BlueprintModal from '@/components/features/planning/BlueprintModal'
 
 export default async function Dashboard({
   searchParams,
@@ -62,7 +63,8 @@ export default async function Dashboard({
     weeklyHabitsResponse,
     goalsResponse,
     inboxResponse,
-    profileResponse
+    profileResponse,
+    blueprintResponse,
   ] = await Promise.all([
     supabase
       .from('tasks')
@@ -103,6 +105,12 @@ export default async function Dashboard({
       .select('has_onboarded')
       .eq('id', user.id)
       .single(),
+
+    supabase
+      .from('blueprints')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('day_of_week', { ascending: true }),
   ],
   )
 
@@ -111,7 +119,7 @@ export default async function Dashboard({
     weeklyHabitsResponse && 'data' in weeklyHabitsResponse ? (weeklyHabitsResponse.data ?? []) : []
   const goals = goalsResponse && 'data' in goalsResponse ? (goalsResponse.data ?? []) : []
   const inboxTasks = inboxResponse && 'data' in inboxResponse ? (inboxResponse.data ?? []) : []
-
+  const blueprints = blueprintResponse.data || []
   const hasOnboarded = profileResponse.data?.has_onboarded ?? false
 
   const tree = goals.map((goal: any) => ({
@@ -389,6 +397,9 @@ export default async function Dashboard({
           </div>
 
           {/* VIEW TOGGLE */}
+
+          <BlueprintModal items={blueprints} currentDateStr={normalizedDateStr} />
+
           <div id="tour-planner" className="flex rounded-lg bg-stone-200 p-1 dark:bg-stone-800">
             <Link
               id="view-toggle-focus"
