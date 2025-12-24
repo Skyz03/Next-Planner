@@ -37,12 +37,20 @@ export default async function Dashboard({
   const weekDays = getWeekDays(selectedDate)
   const startOfWeekDate = weekDays[0]
   const endOfWeekDate = weekDays[6]
-
   const startOfWeek = formatDate(startOfWeekDate)
   const endOfWeek = formatDate(endOfWeekDate)
 
   const nextMondayStr = formatDate(new Date(weekDays[1]))
   const reviewData = await getWeeklyReviewData(startOfWeek, endOfWeek)
+
+  // 2. Calculate NEXT Week (For the Queue)
+  const nextWeekStart = new Date(startOfWeekDate)
+  nextWeekStart.setDate(startOfWeekDate.getDate() + 7)
+  const nextWeekEnd = new Date(endOfWeekDate)
+  nextWeekEnd.setDate(endOfWeekDate.getDate() + 7)
+
+  const nextWeekStartStr = formatDate(nextWeekStart)
+  const nextWeekEndStr = formatDate(nextWeekEnd)
 
   // Navigation Logic
   const prevWeek = new Date(selectedDate)
@@ -63,7 +71,8 @@ export default async function Dashboard({
     goalsResponse,
     inboxResponse,
     profileResponse,
-    blueprintResponse
+    blueprintResponse,
+    nextWeekTasksResponse
   ] = await Promise.all([
     supabase
       .from('tasks')
@@ -108,6 +117,16 @@ export default async function Dashboard({
       .select('*')
       .eq('user_id', user.id)
       .order('day_of_week', { ascending: true }),
+
+    // 🆕 Fetch Next Week's Tasks
+    supabase
+      .from('tasks')
+      .select('*, goals(title)')
+      .eq('user_id', user.id)
+      .gte('due_date', nextWeekStartStr)
+      .lte('due_date', nextWeekEndStr)
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false }),
   ])
 
   const allWeekTasks = weekTasksResponse.data || []
@@ -116,6 +135,7 @@ export default async function Dashboard({
   const inboxTasks = inboxResponse.data || []
   const blueprints = blueprintResponse.data || []
   const hasOnboarded = profileResponse.data?.has_onboarded ?? false
+  const nextWeekTasks = nextWeekTasksResponse.data || [] // 🆕
 
   const tree = goals.map((goal: any) => ({
     ...goal,
@@ -295,7 +315,7 @@ export default async function Dashboard({
 
         {/* MAIN CONTENT AREA */}
         {viewMode === 'plan' ? (
-          <PlanningGrid weekDays={weekDays} allTasks={allWeekTasks} />
+          <PlanningGrid weekDays={weekDays} allTasks={allWeekTasks} nextWeekTasks={nextWeekTasksResponse?.data || []} nextMondayStr={nextWeekStartStr} />
         ) : (
           <div className="relative flex h-full flex-col overflow-hidden">
             <div className="z-30 flex h-32 flex-none flex-col border-b border-stone-200 bg-[#FAFAF9]/90 px-8 py-4 shadow-sm backdrop-blur-md dark:border-stone-800 dark:bg-[#1C1917]/90">
