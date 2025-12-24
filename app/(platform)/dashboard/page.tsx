@@ -135,7 +135,7 @@ export default async function Dashboard({
   const inboxTasks = inboxResponse.data || []
   const blueprints = blueprintResponse.data || []
   const hasOnboarded = profileResponse.data?.has_onboarded ?? false
-  const nextWeekTasks = nextWeekTasksResponse.data || [] // 🆕
+  const nextWeekTasks = nextWeekTasksResponse.data || []
 
   const tree = goals.map((goal: any) => ({
     ...goal,
@@ -144,7 +144,7 @@ export default async function Dashboard({
 
   const dateRangeText = `${startOfWeekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 
-  // --- SIDEBAR CONTENT ---
+  // --- SIDEBAR CONTENT (Passed to MobileSidebar inside DashboardShell) ---
   const sidebarContent = (
     <DroppableDay
       dateStr={null}
@@ -262,50 +262,57 @@ export default async function Dashboard({
 
       <DashboardShell sidebar={sidebarContent} viewMode={viewMode} >
         {/* HEADER: COMMAND CENTER */}
-        <div id="tour-welcome" className="relative z-40 flex h-16 items-center justify-between border-b border-stone-200 bg-[#FAFAF9] px-8 pl-16 transition-colors duration-500 dark:border-stone-800 dark:bg-[#1C1917]">
+        {/* ✅ RESPONSIVE: Padding adjusted for mobile vs desktop */}
+        <div id="tour-welcome" className="relative z-40 flex h-16 items-center justify-between border-b border-stone-200 bg-[#FAFAF9] px-4 md:px-8 md:pl-16 transition-colors duration-500 dark:border-stone-800 dark:bg-[#1C1917]">
 
           {/* LEFT: Title & Date Nav */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6 pl-8 md:pl-0"> {/* pl-8 allows space for mobile hamburger */}
+            {/* ✅ RESPONSIVE: Hide Title on Mobile */}
             <h1 className="hidden font-serif text-lg font-bold text-stone-900 md:block dark:text-stone-100">
               {viewMode === 'plan' ? 'Weekly Strategy' : 'Daily Focus'}
             </h1>
 
             {/* DATE NAVIGATION */}
-            <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-100 p-1 pr-4 shadow-sm dark:border-stone-800/50 dark:bg-stone-800/50">
+            <div className="flex items-center gap-2 md:gap-3 rounded-xl border border-stone-200 bg-stone-100 p-1 md:pr-4 shadow-sm dark:border-stone-800/50 dark:bg-stone-800/50">
               <div className="flex items-center gap-0.5">
                 <Link href={`/dashboard?date=${formatDate(prevWeek)}&view=${viewMode}`} className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition-all hover:bg-white hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-200"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></Link>
+                {/* ✅ RESPONSIVE: 'Today' button is smaller on mobile if needed, or consistent */}
                 <Link href={`/dashboard?date=${todayStr}&view=${viewMode}`} className={`flex h-7 items-center justify-center rounded-lg px-3 text-xs font-bold transition-all ${normalizedDateStr === todayStr ? 'cursor-default bg-white text-stone-800 shadow-sm dark:bg-stone-700 dark:text-stone-100' : 'text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20'}`}>Today</Link>
                 <Link href={`/dashboard?date=${formatDate(nextWeek)}&view=${viewMode}`} className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition-all hover:bg-white hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-200"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></Link>
               </div>
-              <div className="h-4 w-px bg-stone-300 dark:bg-stone-700"></div>
-              <span className="font-mono text-xs font-medium tracking-tight text-stone-500 uppercase dark:text-stone-400">{dateRangeText}</span>
+
+              {/* ✅ RESPONSIVE: Hide Date Text Range on Mobile (Compact Mode) */}
+              <div className="hidden sm:block h-4 w-px bg-stone-300 dark:bg-stone-700"></div>
+              <span className="hidden sm:block font-mono text-xs font-medium tracking-tight text-stone-500 uppercase dark:text-stone-400">{dateRangeText}</span>
             </div>
           </div>
 
           {/* RIGHT: Tools & View Toggle */}
-          <div className="flex items-center gap-4">
-            {/* 1. Timer */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* 1. Timer (Always visible) */}
             <HeaderTimer />
 
-            {/* 2. Blueprint Modal */}
-            <BlueprintModal items={blueprints} currentDateStr={normalizedDateStr} />
+            {/* 2. Blueprint Modal - ✅ RESPONSIVE: Hide on mobile to declutter */}
+            <div className="hidden md:block">
+              <BlueprintModal items={blueprints} currentDateStr={normalizedDateStr} />
+            </div>
 
             {/* Separator */}
-            <div className="h-6 w-px bg-stone-200 dark:bg-stone-800"></div>
+            <div className="hidden md:block h-6 w-px bg-stone-200 dark:bg-stone-800"></div>
 
             {/* 3. View Toggle */}
             <div id="tour-planner" className="flex rounded-lg bg-stone-200 p-1 dark:bg-stone-800">
               <Link
                 id="view-toggle-focus"
                 href={`/dashboard?date=${normalizedDateStr}&view=focus`}
-                className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'focus' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
+                className={`rounded-md px-3 md:px-4 py-1 text-xs font-bold transition-all ${viewMode === 'focus' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
               >
                 Focus
               </Link>
               <Link
                 id="view-toggle-plan"
                 href={`/dashboard?date=${normalizedDateStr}&view=plan`}
-                className={`rounded-md px-4 py-1 text-xs font-bold transition-all ${viewMode === 'plan' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
+                className={`rounded-md px-3 md:px-4 py-1 text-xs font-bold transition-all ${viewMode === 'plan' ? 'bg-white text-stone-800 shadow-sm dark:bg-stone-600 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}
               >
                 Plan
               </Link>
@@ -315,23 +322,26 @@ export default async function Dashboard({
 
         {/* MAIN CONTENT AREA */}
         {viewMode === 'plan' ? (
-          <PlanningGrid weekDays={weekDays} allTasks={allWeekTasks} nextWeekTasks={nextWeekTasksResponse?.data || []} nextMondayStr={nextWeekStartStr} />
+          // PlanningGrid internal logic handles the scroll snapping
+          <PlanningGrid weekDays={weekDays} allTasks={allWeekTasks} nextWeekTasks={nextWeekTasks} nextMondayStr={nextWeekStartStr} />
         ) : (
           <div className="relative flex h-full flex-col overflow-hidden">
-            <div className="z-30 flex h-32 flex-none flex-col border-b border-stone-200 bg-[#FAFAF9]/90 px-8 py-4 shadow-sm backdrop-blur-md dark:border-stone-800 dark:bg-[#1C1917]/90">
+            <div className="z-30 flex h-auto min-h-[5rem] flex-none flex-col border-b border-stone-200 bg-[#FAFAF9]/90 px-4 md:px-8 py-4 shadow-sm backdrop-blur-md dark:border-stone-800 dark:bg-[#1C1917]/90">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[10px] font-bold tracking-widest text-stone-400 uppercase">
+                <h2 className="text-[10px] font-bold tracking-widest text-stone-400 uppercase hidden md:block">
                   Move tasks to another day
                 </h2>
               </div>
-              <div className="flex flex-1 items-start gap-2">
+              {/* ✅ RESPONSIVE: Added overflow-x-auto for day list on mobile */}
+              <div className="flex flex-1 items-start gap-2 overflow-x-auto no-scrollbar pb-2">
                 {weekDays.map((day) => {
                   const dateStr = formatDate(day)
                   const isActive = dateStr === normalizedDateStr
                   const dayLoad = allWeekTasks.filter((t) => t.due_date === dateStr).length
 
                   return (
-                    <DroppableDay key={dateStr} dateStr={dateStr} className="h-full flex-1">
+                    // ✅ RESPONSIVE: Added min-w-[70px] to prevent squishing
+                    <DroppableDay key={dateStr} dateStr={dateStr} className="h-full flex-1 min-w-[70px]">
                       <Link
                         href={`/dashboard?date=${dateStr}&view=focus`}
                         scroll={false}

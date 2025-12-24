@@ -1,19 +1,34 @@
 'use client'
 
-import { DndContext, DragEndEvent, useSensors, useSensor, PointerSensor } from '@dnd-kit/core'
+import {
+  DndContext,
+  DragEndEvent,
+  useSensors,
+  useSensor,
+  MouseSensor, // 👈 Import Mouse
+  TouchSensor  // 👈 Import Touch
+} from '@dnd-kit/core'
 import { moveTaskToDate, scheduleTaskTime } from '@/actions/task'
-import { useTransition, useId } from 'react' // <--- 1. Import useId
+import { useTransition, useId } from 'react'
 
 export default function PlannerBoard({ children }: { children: React.ReactNode }) {
   const [isPending, startTransition] = useTransition()
-
-  // 2. Generate a stable ID (or you can just use a string like id="planner-board")
   const id = useId()
 
+  // ✅ RESPONSIVE SENSORS
+  // We separate Mouse and Touch behaviors to prevent blocking scroll on mobile.
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    // 1. Mouse: Standard "Click and Drag" behavior
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 10, // User must move mouse 10px to start drag (prevents accidental clicks)
+      },
+    }),
+    // 2. Touch: "Long Press" to drag, otherwise scroll
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 👈 Key for mobile: Hold 250ms to pick up task
+        tolerance: 5, // Allow slight movement (shaking finger) during the hold
       },
     }),
   )
@@ -25,9 +40,9 @@ export default function PlannerBoard({ children }: { children: React.ReactNode }
     const taskId = active.data.current?.taskId
     const overId = String(over.id)
 
+    // 1. Dropped on Time Grid Slot
     if (overId.startsWith('slot-')) {
-      const timeStr = over.data.current?.time // "09:00"
-      // Default 60 mins duration
+      const timeStr = over.data.current?.time
       await scheduleTaskTime(taskId, timeStr, 60)
     }
 
@@ -36,7 +51,7 @@ export default function PlannerBoard({ children }: { children: React.ReactNode }
       await scheduleTaskTime(taskId, null)
     }
 
-    // 3. Dropped on DATE (Your previous logic)
+    // 3. Dropped on DATE (DroppableDay)
     else if (over.data.current?.date) {
       const dateStr = over.data.current?.date
       await moveTaskToDate(taskId, dateStr)
@@ -44,13 +59,18 @@ export default function PlannerBoard({ children }: { children: React.ReactNode }
 
     // 4. Dropped on BACKLOG SIDEBAR
     else if (overId.includes('backlog')) {
-      await moveTaskToDate(taskId, null) // Remove date entirely
+      await moveTaskToDate(taskId, null)
     }
   }
 
   return (
-    // 3. Pass the id prop here
-    <DndContext id={id} sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      id={id}
+      sensors={sensors}
+      onDragEnd={handleDragEnd}
+      // Optional: autoScroll helps when dragging to the edge of the mobile screen
+      autoScroll={{ layoutShiftCompensation: false }}
+    >
       {children}
     </DndContext>
   )

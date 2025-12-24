@@ -20,11 +20,14 @@ export default function PlanningGrid({
     return date.toISOString().split('T')[0]
   }
 
-  const safeNextWeekTasks = nextWeekTasks || [] 
+  const safeNextWeekTasks = nextWeekTasks || []
 
   return (
-    <div className="h-full w-full overflow-x-auto overflow-y-hidden custom-scrollbar bg-[#F5F5F4] dark:bg-[#121212]">
-      <div className="flex h-full min-w-max p-8 gap-6">
+    // ✅ CHANGED: Added snap-x and snap-mandatory for mobile swiping
+    <div className="h-full w-full overflow-x-auto overflow-y-hidden custom-scrollbar bg-[#F5F5F4] dark:bg-[#121212] snap-x snap-mandatory">
+
+      {/* ✅ CHANGED: Responsive padding (p-4 mobile, p-8 desktop) and gap */}
+      <div className="flex h-full min-w-max p-4 md:p-8 gap-4 md:gap-6">
 
         {/* --- STANDARD WEEK COLUMNS --- */}
         {weekDays.map((day) => {
@@ -42,8 +45,13 @@ export default function PlanningGrid({
             <DroppableDay
               key={dateStr}
               dateStr={dateStr}
+              // ✅ CHANGED: 
+              // 1. snap-center: Forces card to center on mobile scroll stop
+              // 2. w-[85vw] md:w-80: Full width (- margins) on mobile, fixed on desktop
               className={`
-                group relative flex h-full w-80 flex-col rounded-3xl border transition-colors duration-300
+                snap-center
+                w-[85vw] md:w-80
+                group relative flex h-full flex-col rounded-3xl border transition-colors duration-300
                 ${isToday
                   ? 'bg-white dark:bg-[#1C1917] border-stone-200 dark:border-stone-800 shadow-xl shadow-stone-200/50 dark:shadow-black/50'
                   : 'bg-stone-100/50 dark:bg-[#18181b] border-transparent hover:border-stone-200 dark:hover:border-stone-800'
@@ -84,13 +92,14 @@ export default function PlanningGrid({
         })}
 
         {/* --- 🆕 THE "NEXT WEEK" QUEUE --- */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center snap-align-none">
           <div className="h-full w-px bg-stone-300 dark:bg-stone-800/50 mx-2"></div>
         </div>
 
         <DroppableDay
-          dateStr={nextMondayStr} // Dropping here sets date to Next Monday
-          className="group relative flex h-full w-80 flex-col rounded-3xl border-2 border-dashed border-stone-200 bg-stone-50/50 dark:bg-[#151515] dark:border-stone-800/50"
+          dateStr={nextMondayStr}
+          // ✅ CHANGED: snap-center and responsive width
+          className="snap-center w-[85vw] md:w-80 group relative flex h-full flex-col rounded-3xl border-2 border-dashed border-stone-200 bg-stone-50/50 dark:bg-[#151515] dark:border-stone-800/50"
         >
           <div className="flex-none p-5 pb-2 opacity-60 group-hover:opacity-100 transition-opacity">
             <div className="flex items-center gap-2 mb-2 text-stone-500">
@@ -106,7 +115,6 @@ export default function PlanningGrid({
             {/* Show items already in the queue */}
             {safeNextWeekTasks.map((task) => (
               <DraggableTask key={task.id} task={task}>
-                {/* We render them slightly simpler/transparent to indicate "Future" */}
                 <div className="opacity-80 hover:opacity-100 transition-opacity">
                   <TaskItem task={task} />
                 </div>
