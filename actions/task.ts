@@ -162,7 +162,7 @@ export async function scheduleTaskTime(
 export async function toggleTimer(taskId: string) {
   const supabase = await createClient()
 
-  // 1. Get current task state
+  // 1. Get current task status
   const { data: task } = await supabase
     .from('tasks')
     .select('last_started_at, actual_duration')
@@ -173,27 +173,28 @@ export async function toggleTimer(taskId: string) {
 
   const now = new Date()
 
-  // CASE A: STOPPING (It was running)
   if (task.last_started_at) {
+    // STOPPING: Calculate session duration in minutes
     const startTime = new Date(task.last_started_at)
-    // Calculate minutes elapsed since start
-    const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
+    const sessionMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000)
+    const newTotal = (task.actual_duration || 0) + sessionMinutes
 
     await supabase
       .from('tasks')
       .update({
-        last_started_at: null, // Stop it
-        actual_duration: (task.actual_duration || 0) + elapsedMinutes, // Add to total
+        last_started_at: null,
+        actual_duration: newTotal
       })
+      .eq('id', taskId)
+  } else {
+    // STARTING: Set timestamp
+    await supabase
+      .from('tasks')
+      .update({ last_started_at: now.toISOString() })
       .eq('id', taskId)
   }
 
-  // CASE B: STARTING (It was stopped)
-  else {
-    await supabase.from('tasks').update({ last_started_at: now.toISOString() }).eq('id', taskId)
-  }
-
-  revalidatePath('/')
+  revalidatePath('/dashboard')
 }
 
 export async function updateTaskDuration(taskId: string, duration: number) {
